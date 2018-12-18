@@ -10,34 +10,39 @@ Portability :  portable
 -}
 
 module MiniFrame
-    ( sampleMiniFrame
+    (
+    -- Creation 
+      sampleMiniFrame             -- -> MiniFrame
+    -- , fromCSV                     -- 
 
     -- Retrieval
-    , getName
-    , getHeader
-    , getFields
-    , getFieldByIndex
-    , getColumnFieldByIndex
+    , getName                   -- MiniFrame -> String
+    , getHeader                 -- MiniFrame -> [String]
+    , getFields                 -- MiniFrame -> [[String]]
+    , getFieldByIndex           -- MiniFrame -> Integer -> Field
+    , getColumnFieldByIndex     -- MiniFrame -> Integer -> Field
 
     -- Modification
-    , addField
-    , addColumn
-    , removeFieldByIndex
-    , removeColumnFieldByIndex
+    , addField                  -- MiniFrame -> Field -> MiniFrame
+    , addColumn                 -- MiniFrame -> Field -> MiniFrame
+    -- , removeFieldByIndex        -- MiniFrame -> Integer -> MiniFrame
+    -- , removeColumnFieldByIndex  -- 
+    -- , merge                     -- 
 
     -- Pretty-printers
-    , printName
-    , printHeader
-    , printFields
-    , printMF
+    , printName                 -- MiniFrame -> IO ()
+    , printHeader               -- MiniFrame -> IO ()
+    , printFields               -- MiniFrame -> IO ()
+    , printMF                   -- MiniFrame -> IO ()
 
     -- Lengths
-    , rowsNum
-    , columnsNum
+    , rowsNum                   -- MiniFrame -> Integer
+    , columnsNum                -- MiniFrame -> Integer
     ) where
 
 import Data.List
 
+type ID     = Integer   -- Change everything to Int
 type Name   = String
 type Header = [String]
 type Field  = [String]
@@ -85,9 +90,15 @@ getColumnFieldByIndex (MiniFrame name header fields) index = transpose fields !!
 addField :: MiniFrame -> Field -> MiniFrame
 addField (MiniFrame name header fields) field = MiniFrame name header (fields ++ [field])
 
+-- | Add the column to the end of the data frame
+-- addColumn MiniFrame ["HEADER NAME", <..DATA..>] ==> 
+-- ==> MiniFrame ( ( name = same header = [... "HEADER NAME"] fields = [[... <..DATA..>],..,[... <..DATA..>]] ) )
+addColumn :: MiniFrame -> Field -> MiniFrame
+addColumn (MiniFrame name header fields) field = MiniFrame name (header ++ [head field]) (transpose (transpose fields ++ [tail field]))
+
 -- | Remove the field at the particular index
 removeFieldByIndex :: MiniFrame -> Integer -> MiniFrame
-removeFieldByIndex (MiniFrame name header fields) index = MiniFrame (name header (take (index - 1) fields ++ drop index field))
+removeFieldByIndex (MiniFrame name header fields) index = MiniFrame name header (take (fromInteger index - 1) fields ++ drop (fromInteger index) fields)
 
 -- | Print the name of the data frame
 printName :: MiniFrame -> IO ()
@@ -105,7 +116,7 @@ printFields (MiniFrame name header fields) = mapM_ print fields
 printMF :: MiniFrame -> IO ()
 printMF (MiniFrame name header fields) = do putStrLn (" " ++ replicate (length name) '_' ++ "\n|" ++ name ++ "|\n " ++ replicate (length name) '-' ++ "\n")
                                             mapM_ putStr [fst i ++ replicate (snd i - length (fst i) + 3) ' ' | i <- zip header maxNumOfSpaces]
-                                            putStrLn ("\n" ++ replicate (maximum (map (length . show) fields)) '=')
+                                            putStrLn ("\n" ++ replicate (maximum (map (length . show) fields) + 6) '=')
                                             mapM_ putStrLn [intercalate " | " i | i <- fieldsForPrettyPrint]
                                             where
                                                 headerLengthList = map length header
@@ -136,5 +147,7 @@ main = do
     -- printHeader sampleMF
     -- printFields sampleMF
     -- printMF sampleMF
-    printMF (addField sampleMF ["This", "is", "a", "test MiniFrame"])
-    printMF (removeFieldByIndex sampleMF 1)
+    -- printMF (addField sampleMF ["This", "is", "a", "test MiniFrame"])
+    printMF (removeFieldByIndex sampleMF 0)
+    -- printMF (addColumn sampleMF ["This", "is", "a", "test MiniFrame"])
+
