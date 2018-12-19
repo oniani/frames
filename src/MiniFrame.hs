@@ -25,11 +25,17 @@ to use/reuse the module or improve its functionalities.
 --
 -- ====================================================================================================
 
-
 module MiniFrame
     (
+    -- Types
+      ID                          -- Int
+    , Name                        -- String
+    , Header                      -- [Name]
+    , Field                       -- [String]
+    , Fields                      -- [Field]
+
     -- Creation 
-      sampleMiniFrame             -- -> MiniFrame
+    , sampleMiniFrame             -- -> MiniFrame
     , fromCSV                     -- String -> IO MiniFrame
 
     -- Retrieval
@@ -41,6 +47,7 @@ module MiniFrame
 
     -- Modification
     , rename                    -- MiniFrame -> Name -> MiniFrame
+    , renameColumn              -- MiniFrame -> Name -> Name -> MiniFrame
     , addField                  -- MiniFrame -> Field -> MiniFrame
     , addColumn                 -- MiniFrame -> Field -> MiniFrame
     , removeFieldByID           -- MiniFrame -> ID -> MiniFrame
@@ -49,7 +56,7 @@ module MiniFrame
     -- Relational algebra
     -- , select                    --
     -- , join                      --
-    -- , intersect                 --  
+    , intersection              --  
 
     -- Pretty-printers
     , printName                 -- MiniFrame -> IO ()
@@ -77,6 +84,7 @@ data MiniFrame = MiniFrame
     , fields ::  Fields }       -- Fields of the MiniFrame
     deriving (Eq)
 
+-- ====================================================================================================
 
 -- | A sample MiniFrame
 sampleMiniFrame :: MiniFrame
@@ -96,56 +104,70 @@ fromCSV file = do
     let miniframe = [splitBy ',' i | i <- init (splitBy '\n' contents)]
     return (MiniFrame "MiniFrame" (head miniframe) (tail miniframe))
     where
-        splitBy delimiter = foldr f [[]]
-                            where
-                                f c l@(x:xs)
-                                    | c == delimiter = []:l
-                                    | otherwise = (c:x):xs
+        splitBy delimiter = foldr fun [[]]
+            where
+                fun c l@(x:xs)
+                    | c == delimiter = []:l
+                    | otherwise = (c:x):xs
 
--- | Get the name of the data frame
+-- ====================================================================================================
+
+-- | Get miniframe name
 getName :: MiniFrame -> Name
 getName (MiniFrame name header fields) = name
 
--- | Get the header of the data frame
+-- | Get header
 getHeader :: MiniFrame -> Header
 getHeader (MiniFrame name header fields) = header
 
--- | Get the fields of the data frame
+-- | Get all fields
 getFields :: MiniFrame -> Fields
 getFields (MiniFrame name header fields) = fields
 
--- | Get the row at the particular ID
+-- | Get row by ID
 getFieldByID :: MiniFrame -> ID -> Field
 getFieldByID (MiniFrame name header fields) id = fields !! id
 
--- | Get the column at the particular index
-getColumnByName :: MiniFrame -> ID -> Field
-getColumnByName (MiniFrame name header fields) columnName = transpose fields !! id
+-- | Get column by name
+getColumnByName :: MiniFrame -> Name -> Field
+getColumnByName (MiniFrame name header fields) columnName
+    | columnName `elem` header = transpose fields !! index
+    | otherwise = []
     where
-        index = fromJust (elemIndex header columnName)
+        index = fromJust (elemIndex columnName header)
 
+-- ====================================================================================================
 
--- | Rename the data frame
+-- | Rename miniframe
 rename :: MiniFrame -> Name -> MiniFrame
 rename (MiniFrame name header fields) newName = MiniFrame newName header fields
 
--- | Add the field to the end of the data frame
+-- | Rename column by name
+renameColumn :: MiniFrame -> Name -> Name -> MiniFrame
+renameColumn (MiniFrame name header fields) oldColumnName newColumnName
+    | oldColumnName `elem` header = MiniFrame name newHeader fields
+    | otherwise                   = MiniFrame name header fields
+    where
+        index     = fromJust (elemIndex oldColumnName header)
+        newHeader = take index header ++ [newColumnName] ++ drop (index + 1) header
+
+-- | Add field to the end of miniframe
 addField :: MiniFrame -> Field -> MiniFrame
 addField (MiniFrame name header fields) field = MiniFrame name header (fields ++ [field])
 
--- | Add the column to the end of the data frame
--- addColumn MiniFrame ["HEADER NAME", <..DATA..>] ==> 
--- ==> MiniFrame ( ( name = same header = [... "HEADER NAME"] fields = [[... <..DATA..>],..,[... <..DATA..>]] ) )
+-- | Add column to the end of miniframe
 addColumn :: MiniFrame -> Field -> MiniFrame
 addColumn (MiniFrame name header fields) field = MiniFrame name (header ++ [head field]) (transpose (transpose fields ++ [tail field]))
 
--- | Remove the field by its id
+-- ====================================================================================================
+
+-- | Remove field by id
 removeFieldByID :: MiniFrame -> ID -> MiniFrame 
 removeFieldByID (MiniFrame name header fields) id
     | id <= 0 || id > length fields = MiniFrame name header fields
     | otherwise                     = MiniFrame name header (take (id - 1) fields ++ drop id fields)
 
--- | Remove the column by its name
+-- | Remove column by name
 removeColumnByName :: MiniFrame -> Name -> MiniFrame
 removeColumnByName (MiniFrame name header fields) columnName
     | columnName `elem` header = MiniFrame name newHeader newFields
@@ -155,22 +177,47 @@ removeColumnByName (MiniFrame name header fields) columnName
         index     = fromJust (elemIndex columnName header)
         newFields = transpose (take index (transpose fields) ++ drop (index + 1) (transpose fields))
 
--- | Print the name of the data frame
+-- ====================================================================================================
+
+-- Select operation from relational algebra
+-- What if select multiple columns? Field of Fields? getColumnByName returns Field not MiniFrame!
+-- select :: MiniFrame -> Name -> MiniFrame
+-- select (MiniFrame name header fields) columnName
+--     | columnName `elem` header = getColumnByName (MiniFrame name header fields) columnName 
+--     | otherwise                = MiniFrame name header fields
+
+-- Join operation from relational algebra
+-- join :: MiniFrame -> MiniFrame -> Field -> MiniFrame
+-- join (MiniFrame name header fields) (MiniFrame otherName otherHeader otherFields) onField
+    -- | 
+
+-- Intersect operation from relational algebra
+-- This fails when headers do not match but columns do, vice versa
+intersection :: MiniFrame -> MiniFrame -> MiniFrame
+intersection (MiniFrame name header fields) (MiniFrame otherName otherHeader otherFields) = MiniFrame newName newHeader newFields
+    where
+        newName   = name ++ " intersect " ++ otherName
+        newHeader = header `intersect` otherHeader
+        newFields = fields `intersect` otherFields
+
+-- ====================================================================================================
+
+-- | Print name of miniframe
 printName :: MiniFrame -> IO ()
 printName (MiniFrame name header fields) = print name
 
--- | Print the header of the data frame
+-- | Print header of miniframe
 printHeader :: MiniFrame -> IO ()
 printHeader (MiniFrame name header fields) = print header
 
--- | Print the fields of the data frame
+-- | Print fields of miniframe
 printFields :: MiniFrame -> IO ()
 printFields (MiniFrame name header fields) = mapM_ print fields
 
--- | Print the data frame
+-- | Print miniframe
 printMF :: MiniFrame -> IO ()
 printMF (MiniFrame name header fields) = do
-    putStrLn (" " ++ replicate (length name) '_' ++ "\n|" ++ name ++ "|\n " ++ replicate (length name) '-' ++ "\n")
+    putStrLn (" " ++ replicate (length name + 2) '_' ++ "\n| " ++ name ++ " |\n " ++ replicate (length name + 2) '-' ++ "\n")
     mapM_ putStr ([fst i ++ " |" ++ replicate (snd i - length (fst i) + 1) ' ' | i <- init (zip newHeader maxNumOfSpaces)] ++ [last newHeader])
     putStrLn ("\n" ++ replicate (sum (map length newHeader) + 3 * (length newHeader - 1)) '=')
     mapM_ putStrLn [intercalate " | " i | i <- fieldsForPrettyPrint]
@@ -182,35 +229,12 @@ printMF (MiniFrame name header fields) = do
         maxNumOfSpaces             = [if uncurry (>) i then fst i else snd i | i <- zip headerLengthList maxLengthOfFieldsPerColumn]
         fieldsForPrettyPrint       = transpose [map (\n -> n ++ replicate (snd i - length n) ' ') (fst i) | i <- zip (transpose newFields) maxNumOfSpaces]
 
--- | Get the number of rows
+-- ====================================================================================================
+
+-- | Get number of rows
 rowsNum :: MiniFrame -> Int
 rowsNum (MiniFrame name header fields) = length fields
 
--- | Get the number of columns
+-- | Get number of columns
 columnsNum :: MiniFrame -> Int
 columnsNum (MiniFrame name header fields) = length (transpose fields)
-
-
-main = do
-    -- putStrLn "Testing..."
-    -- putStrLn "----------\n"
-
-    -- let sampleMF = sampleMiniFrame
-    -- printMF (rename sampleMF "Random")
-
-    -- print $ getName   sampleMF
-    -- print $ getHeader sampleMF
-    -- print $ getFields sampleMF
-
-    -- printName   sampleMF
-    -- printHeader sampleMF
-    -- printFields sampleMF
-    -- printMF sampleMF
-    -- printMF (addField sampleMF ["This", "is", "a", "test MiniFrame"])
-    -- printMF (removeFieldByID sampleMF 0)
-    -- printMF (removeFieldByID sampleMF 1)
-    -- printMF (addColumn sampleMF ["This", "is", "a", "test MiniFrame"])
-    miniframe <- fromCSV "test.csv"
-    printMF miniframe
-    putStrLn "\n"
-    printMF (removeColumnByName miniframe "Mumble1")
