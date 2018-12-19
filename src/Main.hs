@@ -1,14 +1,14 @@
 module Main where
 
-import MiniFrame
+import Table
 
 
 main = do
     -- putStrLn "Testing..."
     -- putStrLn "----------\n"
 
-    -- let sampleMF = sampleMiniFrame
-    -- printMF (rename sampleMF "Random")
+    -- let sampleMF = sampleTable
+    -- printTable (renameTable sampleMF "Random")
 
     -- print $ getName   sampleMF
     -- print $ getHeader sampleMF
@@ -17,16 +17,16 @@ main = do
     -- printName   sampleMF
     -- printHeader sampleMF
     -- printFields sampleMF
-    -- printMF sampleMF
-    -- printMF (addField sampleMF ["This", "is", "a", "test MiniFrame"])
-    -- printMF (removeFieldByID sampleMF 0)
-    -- printMF (removeFieldByID sampleMF 1)
-    -- printMF (addColumn sampleMF ["This", "is", "a", "test MiniFrame"])
-    miniframe <- fromCSV "test.csv"
-    printMF miniframe
+    -- printTable sampleMF
+    -- printTable (addField sampleMF ["This", "is", "a", "test table"])
+    -- printTable (removeFieldByID sampleMF 0)
+    -- printTable (removeFieldByID sampleMF 1)
+    -- printTable (addColumn sampleMF ["This", "is", "a", "test table"])
+    table <- fromCSV "test.csv"
+    printTable table
     -- putStrLn "\n"
-    -- printMF (removeColumnByName miniframe "Mumble1")
+    -- printTable (removeColumnByName table "Mumble1")
     -- putStrLn "\n"
-    let newOne = renameColumn miniframe "Mumble1" "Mumble4"
-    printMF newOne
-    printMF (intersection newOne miniframe)
+    let newTable = buildTable "A Table" ["Mumble12", "Mumble2", "Mumble5"] [["14","2","31"],["54","5","12"],["19","8","63"]]
+    printTable newTable
+    printTable (tableIntersect table newTable)
