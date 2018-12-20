@@ -26,6 +26,8 @@ The project is licensed under MIT so feel free to use/reuse the module or improv
 -- 
 -- 4. Relational algebra operations do not handle the case of duplicate columns
 --
+-- 5. Simplify printTable (current approach is not easy to digest and does not handle edge cases)
+-- 
 -- ====================================================================================================
 
 module Table
@@ -47,6 +49,7 @@ module Table
     , getName                   -- Table -> Name
     , getHeader                 -- Table -> Header
     , getRows                   -- Table -> [Row]
+    , getColumns                -- Table -> [Column]
     , getRowByID                -- Table -> ID -> Row
     , getColumnByName           -- Table -> ID -> Column
 
@@ -132,7 +135,7 @@ fromColumns name header columns
     | header == nub header = Table name header (transpose columns)
     | otherwise            = Table "DUPLICATE COLUMN NAMES!" header (transpose columns)
 
--- Build a table from the csv file
+-- Build a table from the CSV file
 fromCSV :: String -> IO Table
 fromCSV file = do
     contents <- readFile file
@@ -149,25 +152,29 @@ fromCSV file = do
 
 -- | Get the table name
 getName :: Table -> Name
-getName (Table name header rows) = name
+getName (Table name _ _) = name
 
 -- | Get the header
 getHeader :: Table -> Header
-getHeader (Table name header rows) = header
+getHeader (Table _ header _) = header
 
 -- | Get all the rows
 getRows :: Table -> [Row]
-getRows (Table name header rows) = rows
+getRows (Table _ _ rows) = rows
 
--- | Get a row by its ID
+-- | Get all the columns
+getColumns :: Table -> [Column]
+getColumns (Table _ _ rows) = transpose rows
+
+-- | Get a row by ID
 getRowByID :: Table -> ID -> Row
-getRowByID (Table name header rows) id
-    | id >= 0 && id <= length rows - 1 = rows !! id
-    | otherwise                          = []
+getRowByID (Table _ _ rows) id
+    | id > 0 && id < length rows = rows !! (id - 1)
+    | otherwise                  = []
 
--- | Get a column by its name
+-- | Get a column by name
 getColumnByName :: Table -> Name -> Column
-getColumnByName (Table name header rows) columnName
+getColumnByName (Table _ header rows) columnName
     | columnName `elem` header = transpose rows !! index
     | otherwise                = []
     where
@@ -177,11 +184,11 @@ getColumnByName (Table name header rows) columnName
 
 -- | Get the number of rows
 rowsNum :: Table -> Int
-rowsNum (Table name header rows) = length rows
+rowsNum (Table _ _ rows) = length rows
 
 -- | Get the number of columns
 columnsNum :: Table -> Int
-columnsNum (Table name header rows) = length (transpose rows)
+columnsNum (Table _ _ rows) = length (transpose rows)
 
 -- | Get the number of entries
 entriesNum :: Table -> Int
@@ -193,7 +200,7 @@ entriesNum table = rowsNum table * columnsNum table
 renameTable :: Table -> Name -> Table
 renameTable (Table name header rows) newName = Table newName header rows
 
--- | Rename a column by its name
+-- | Rename a column by name
 renameColumn :: Table -> Name -> Name -> Table
 renameColumn table@(Table name header rows) oldColumnName newColumnName
     | oldColumnName `elem` header = Table name newHeader rows
@@ -283,15 +290,15 @@ tableUnion (Table name header rows) (Table otherName otherHeader otherRows) = Ta
 
 -- | Print the name of the table
 printName :: Table -> IO ()
-printName (Table name header rows) = print name
+printName (Table name _ _) = print name
 
 -- | Print the header of the table
 printHeader :: Table -> IO ()
-printHeader (Table name header rows) = print header
+printHeader (Table _ header _) = print header
 
 -- | Print the rows of the table
 printRows :: Table -> IO ()
-printRows (Table name header rows) = mapM_ print rows
+printRows (Table _ _ rows) = mapM_ print rows
 
 -- | Print the table
 printTable :: Table -> IO ()

@@ -26,7 +26,7 @@ main = do
     printTable (addRow sampleMF ["This", "is", "a", "test table"])
     printTable (removeRowByID sampleMF 0)
     printTable (removeRowByID sampleMF 1)
-    printTable (addColumn sampleMF ["This", "is", "a", "test table"])
+    printTable (addColumn sampleMF ["This", "is", "a", "test table", "This", "is", "a", "test table", "This"])
 
     -- ----------------------------------------------------------------------------------------------------
 
