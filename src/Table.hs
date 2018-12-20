@@ -1,7 +1,7 @@
 {- |
 Module      :  Table.hs
 Description :  Module implements the Table data type and its core functionalities
-Copyright   :  (c) David Oniani, 2018
+Copyright   :  (c) 2018 David Oniani
 License     :  MIT
 
 Maintainer  :  onianidavid@gmail.com
@@ -62,7 +62,7 @@ module Table
     , renameTable               -- Table -> Name -> Table
     , renameColumn              -- Table -> Name -> Name -> Table
     , addRow                    -- Table -> Row -> Table
-    , addColumn                 -- Table -> Column -> Table
+    , addColumn                 -- Table -> Name -> Column -> Table
     , insertRow                 -- Table -> Row -> ID -> Table
     , insertColumn              -- Table -> Name -> Name -> Column -> Table
     , removeRowByID             -- Table -> ID -> Table
@@ -146,7 +146,7 @@ fromCSV file = do
             where
                 fun character list@(x:xs)
                     | character == delimiter = []:list
-                    | otherwise = (character:x):xs
+                    | otherwise              = (character:x):xs
 
 -- ----------------------------------------------------------------------------------------------------
 
@@ -169,7 +169,7 @@ getColumns (Table _ _ rows) = transpose rows
 -- | Get a row by ID
 getRowByID :: Table -> ID -> Row
 getRowByID (Table _ _ rows) id
-    | id > 0 && id < length rows = rows !! (id - 1)
+    | id >= 1 && id <= length rows = rows !! (id - 1)
     | otherwise                  = []
 
 -- | Get a column by name
@@ -214,11 +214,12 @@ addRow :: Table -> Row -> Table
 addRow (Table name header rows) newRow = Table name header (rows ++ [newRow])
 
 -- | Add a column to the end of the table
-addColumn :: Table -> Column -> Table
-addColumn (Table name header rows) newColumn = Table name newHeader newRows
+-- Test this!!
+addColumn :: Table -> Name -> Column -> Table
+addColumn (Table name header rows) newColumnName newColumn = Table name newHeader newRows
     where
-        newHeader = header ++ [head newColumn]
-        newRows = transpose (transpose rows ++ [tail newColumn])
+        newHeader = header ++ [newColumnName]
+        newRows   = transpose (transpose rows ++ [newColumn])
 
 -- | Insert a row at the given ID
 -- Test this!!
@@ -235,15 +236,15 @@ insertColumn (Table name header rows) leftColumnName rightColumnName newRow = Ta
     where
         leftIndex  = fromJust (elemIndex leftColumnName header)
         rightIndex = fromJust (elemIndex rightColumnName header)
-        newRows  = take leftIndex (transpose rows) ++ [newRow] ++ drop rightIndex (transpose rows)
+        newRows    = take leftIndex (transpose rows) ++ [newRow] ++ drop rightIndex (transpose rows)
 
 -- ----------------------------------------------------------------------------------------------------
 
 -- | Remove a row by ID
 removeRowByID :: Table -> ID -> Table 
 removeRowByID table@(Table name header rows) id
-    | id <= 0 || id > length rows = table
-    | otherwise                   = Table name header (take (id - 1) rows ++ drop id rows)
+    | id < 1 || id > length rows = table
+    | otherwise                  = Table name header (take (id - 1) rows ++ drop id rows)
 
 -- | Remove a column by name
 removeColumnByName :: Table -> Name -> Table
@@ -253,7 +254,7 @@ removeColumnByName table@(Table name header rows) columnName
     where
         newHeader = delete columnName header
         index     = fromJust (elemIndex columnName header)
-        newRows = transpose (take index (transpose rows) ++ drop (index + 1) (transpose rows))
+        newRows   = transpose (take index (transpose rows) ++ drop (index + 1) (transpose rows))
 
 -- ----------------------------------------------------------------------------------------------------
 
@@ -284,7 +285,7 @@ tableUnion (Table name header rows) (Table otherName otherHeader otherRows) = Ta
     where
         newName   = name ++ " intersect " ++ otherName
         newHeader = header `union` otherHeader
-        newRows = transpose (transpose rows `union` transpose otherRows)
+        newRows   = transpose (transpose rows `union` transpose otherRows)
 
 -- ----------------------------------------------------------------------------------------------------
 
@@ -300,6 +301,14 @@ printHeader (Table _ header _) = print header
 printRows :: Table -> IO ()
 printRows (Table _ _ rows) = mapM_ print rows
 
+-- ----------------------------------------------------------------------------------------------------|
+-- ----------------------------------------------------------------------------------------------------|
+--                                                                                                     |
+-- Fix the printTable. Look at how the headers get printed and how the -+- type of frames get matched. |
+--                                                                                                     |
+-- ----------------------------------------------------------------------------------------------------|
+-- ----------------------------------------------------------------------------------------------------|
+
 -- | Print the table
 printTable :: Table -> IO ()
 printTable (Table name header rows) = do
@@ -310,19 +319,21 @@ printTable (Table name header rows) = do
     putStr "\n"
     mapM_ putStr ([fst i ++ "-+" ++ replicate (snd i - length (fst i) + 1) '-' | i <- init (zip dashesUnderHeader maxNumOfSpaces)] ++ [last dashesUnderHeader] ++ ["-+"])
     putStr "\n"
-    mapM_ putStrLn [intercalate " | " i | i <- rowsForPrettyPrint]
+    mapM_ (putStrLn . intercalate " | ") rowsForPrettyPrint
     mapM_ putStr ([fst i ++ "-+" ++ replicate (snd i - length (fst i) + 1) '-' | i <- init (zip dashesUnderHeader maxNumOfSpaces)] ++ [last dashesUnderHeader] ++ ["-+"])    
     putStr "\n"
     where
         -- Header stuff
-        newHeader                = "| ID":header
-        dashesUnderHeaderHelper  = map ((`replicate` '-') . length) newHeader
-        dashesUnderHeader        = ("+" ++ tail(head dashesUnderHeaderHelper)) : tail dashesUnderHeaderHelper
-        headerLengthList         = map length newHeader
-
-        -- Pretty-print the rows
-        newRows                  = [("| "++ show (i + 1)) : rows !! i | i <- [0..length rows - 1]]
-        maxLengthOfRowsPerColumn = map maximum (transpose [map length i | i <- newRows])
-        maxNumOfSpaces           = [if uncurry (>) i then fst i else snd i | i <- zip headerLengthList maxLengthOfRowsPerColumn]
-        rowsForPrettyPrintHelper = transpose [map (\n -> n ++ replicate (snd i - length n) ' ') (fst i) | i <- zip (transpose newRows) maxNumOfSpaces]
-        rowsForPrettyPrint       = transpose (init (transpose rowsForPrettyPrintHelper) ++ [map (++" |") (last (transpose rowsForPrettyPrintHelper))])
+        newHeader                 = "| ID" : header
+        dashesUnderHeaderHelper   = map ((`replicate` '-') . length) newHeader
+        dashesUnderHeader         = ("+" ++ tail(head dashesUnderHeaderHelper)) : tail dashesUnderHeaderHelper
+        headerLengthList          = map length newHeader
+        -- Rows with ID numbers
+        rowsWithID                = [("| "++ show (i + 1)) : rows !! i | i <- [0..length rows - 1]]
+        -- Longest strings per column
+        maxLengthStringsPerColumn = map (maximum . map length) (transpose rowsWithID)
+        -- Comparing maximum string lengths across the header and columns for even spacing
+        maxNumOfSpaces            = map (\n -> if uncurry (>) n then fst n else snd n) (zip headerLengthList maxLengthStringsPerColumn)
+        -- Formatted rows
+        rowsForPrettyPrintHelper  = transpose [map (\n -> n ++ replicate (snd i - length n) ' ') (fst i) | i <- zip (transpose rowsWithID) maxNumOfSpaces]
+        rowsForPrettyPrint        = transpose (init (transpose rowsForPrettyPrintHelper) ++ [map (++" |") (last (transpose rowsForPrettyPrintHelper))])
