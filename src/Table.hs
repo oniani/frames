@@ -39,8 +39,8 @@ module Table
 
     -- Creation 
     , sampleTable               -- -> Table
-    , buildTable                -- Name -> Header -> [Row] -> Table
-    , buildFromColumns          -- Name -> Header -> [Column] -> Table
+    , fromRows                  -- Name -> Header -> [Row] -> Table
+    , fromColumns               -- Name -> Header -> [Column] -> Table
     , fromCSV                   -- String -> IO Table
 
     -- Retrieval
@@ -90,10 +90,24 @@ type Column = [String]          -- Column: [String]
 data Table = Table
     { name   ::  Name           -- Name of the Table
     , header ::  Header         -- Header columns of the Table
-    , roww   ::  [Row] }        -- Rows of the Table
+    , rows   ::  [Row] }        -- Rows of the Table
     deriving (Eq)
 
 -- ----------------------------------------------------------------------------------------------------
+
+
+-- +----+--------------+---------------+--------------+---------------+
+-- | ID | First Column | Second Column | Third Column | Fourth Column |
+-- +----+--------------+---------------+--------------+---------------+
+-- | 1  | Row1-Col1    | Row1-Col2     | Row1-Col3    | Row1-Col4     |
+-- | 2  | Row2-Col1    | Row2-Col2     | Row2-Col3    | Row2-Col4     |
+-- | 3  | Row3-Col1    | Row3-Col2     | Row3-Col3    | Row3-Col4     |
+-- | 4  | Row4-Col1    | Row4-Col2     | Row4-Col3    | Row4-Col4     |
+-- | 5  | Row5-Col1    | Row5-Col2     | Row5-Col3    | Row5-Col4     |
+-- | 6  | Row6-Col1    | Row6-Col2     | Row6-Col3    | Row6-Col4     |
+-- | 7  | Row7-Col1    | Row7-Col2     | Row7-Col3    | Row7-Col4     |
+-- | 8  | Row8-Col1    | Row8-Col2     | Row8-Col3    | Row8-Col4     |
+-- +----+--------------+---------------+--------------+---------------+
 
 -- | A sample table
 sampleTable :: Table
@@ -107,18 +121,18 @@ sampleTable = Table name header rows
                   ["Row7-Col1","Row7-Col2","Row7-Col3","Row7-Col4"],["Row8-Col1","Row8-Col2","Row8-Col3","Row8-Col4"]]
 
 -- | Build a table
-buildTable :: Name -> Header -> [Row] -> Table
-buildTable name header rows
+fromRows :: Name -> Header -> [Row] -> Table
+fromRows name header rows
     | header == nub header = Table name header rows
     | otherwise            = Table "DUPLICATE COLUMN NAMES!" header rows
 
 -- | Build a table from columns
-buildFromColumns :: Name -> Header -> [Column] -> Table
-buildFromColumns name header columns
+fromColumns :: Name -> Header -> [Column] -> Table
+fromColumns name header columns
     | header == nub header = Table name header (transpose columns)
     | otherwise            = Table "DUPLICATE COLUMN NAMES!" header (transpose columns)
 
--- Build the table from the csv file
+-- Build a table from the csv file
 fromCSV :: String -> IO Table
 fromCSV file = do
     contents <- readFile file
@@ -127,9 +141,9 @@ fromCSV file = do
     where
         splitBy delimiter = foldr fun [[]]
             where
-                fun c l@(x:xs)
-                    | c == delimiter = []:l
-                    | otherwise = (c:x):xs
+                fun character list@(x:xs)
+                    | character == delimiter = []:list
+                    | otherwise = (character:x):xs
 
 -- ----------------------------------------------------------------------------------------------------
 
@@ -293,17 +307,15 @@ printTable (Table name header rows) = do
     mapM_ putStr ([fst i ++ "-+" ++ replicate (snd i - length (fst i) + 1) '-' | i <- init (zip dashesUnderHeader maxNumOfSpaces)] ++ [last dashesUnderHeader] ++ ["-+"])    
     putStr "\n"
     where
+        -- Header stuff
         newHeader                = "| ID":header
-
         dashesUnderHeaderHelper  = map ((`replicate` '-') . length) newHeader
         dashesUnderHeader        = ("+" ++ tail(head dashesUnderHeaderHelper)) : tail dashesUnderHeaderHelper
-
         headerLengthList         = map length newHeader
 
+        -- Pretty-print the rows
         newRows                  = [("| "++ show (i + 1)) : rows !! i | i <- [0..length rows - 1]]
         maxLengthOfRowsPerColumn = map maximum (transpose [map length i | i <- newRows])
         maxNumOfSpaces           = [if uncurry (>) i then fst i else snd i | i <- zip headerLengthList maxLengthOfRowsPerColumn]
-
         rowsForPrettyPrintHelper = transpose [map (\n -> n ++ replicate (snd i - length n) ' ') (fst i) | i <- zip (transpose newRows) maxNumOfSpaces]
-        transposedRowsForPPH     = transpose rowsForPrettyPrintHelper
-        rowsForPrettyPrint       = transpose (init transposedRowsForPPH ++ [map (++" |") (last transposedRowsForPPH)])
+        rowsForPrettyPrint       = transpose (init (transpose rowsForPrettyPrintHelper) ++ [map (++" |") (last (transpose rowsForPrettyPrintHelper))])

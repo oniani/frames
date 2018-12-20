@@ -51,6 +51,6 @@ main = do
     
     -- ----------------------------------------------------------------------------------------------------
     
-    let newTable = buildTable "A Table" ["Mumble12", "Mumble2", "Mumble5"] [["14","2","31"],["54","5","12"],["19","8","63"]]
+    let newTable = fromRows "A Table" ["Mumble12", "Mumble2", "Mumble5"] [["14","2","31"],["54","5","12"],["19","8","63"]]
     printTable newTable
     printTable (tableIntersect table newTable)
