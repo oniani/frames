@@ -1,2 +1,2 @@
-# Frames
-Data frames in Haskell.
+# MiniFrames
+Minimal data frames in Haskell.
