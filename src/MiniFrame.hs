@@ -31,16 +31,16 @@ The project is licensed under MIT so feel free to use/reuse the module or improv
 -- ====================================================================================================
 
 module MiniFrame
-    (
+    ( MiniFrame (..)
     -- Types
-      ID                        -- Int
+    , ID                        -- Int
     , Name                      -- String
     , Header                    -- [Name]
     , Row                       -- [String]
     , Column                    -- [String]
 
     -- Creation 
-    , sampleMiniFrame               -- -> MiniFrame
+    , sampleMiniFrame           -- -> MiniFrame
     , fromRows                  -- Name -> Header -> [Row] -> MiniFrame
     , fromColumns               -- Name -> Header -> [Column] -> MiniFrame
     , fromCSV                   -- String -> IO MiniFrame
@@ -59,11 +59,11 @@ module MiniFrame
     , entriesNum                -- MiniFrame -> Int
 
     -- Modification
-    , renameMiniFrame               -- MiniFrame -> Name -> MiniFrame
+    , renameMiniFrame           -- MiniFrame -> Name -> MiniFrame
     , renameColumn              -- MiniFrame -> Name -> Name -> MiniFrame
     , addRow                    -- MiniFrame -> Row -> MiniFrame
     , addColumn                 -- MiniFrame -> Name -> Column -> MiniFrame
-    , insertRow                 -- MiniFrame -> Row -> ID -> MiniFrame
+    , insertRow                 -- MiniFrame -> ID -> Row -> MiniFrame
     , insertColumn              -- MiniFrame -> Name -> Name -> Column -> MiniFrame
     , removeRowByID             -- MiniFrame -> ID -> MiniFrame
     , removeColumnByName        -- MiniFrame -> Name -> MiniFrame
@@ -78,7 +78,7 @@ module MiniFrame
     , printName                 -- MiniFrame -> IO ()
     , printHeader               -- MiniFrame -> IO ()
     , printRows                 -- MiniFrame -> IO ()
-    , printMiniFrame                -- MiniFrame -> IO ()
+    , printMiniFrame            -- MiniFrame -> IO ()
     ) where
 
 import Data.List
@@ -97,20 +97,6 @@ data MiniFrame = MiniFrame
     deriving (Eq)
 
 -- ----------------------------------------------------------------------------------------------------
-
-
--- +----+--------------+---------------+--------------+---------------+
--- | ID | First Column | Second Column | Third Column | Fourth Column |
--- +----+--------------+---------------+--------------+---------------+
--- | 1  | Row1-Col1    | Row1-Col2     | Row1-Col3    | Row1-Col4     |
--- | 2  | Row2-Col1    | Row2-Col2     | Row2-Col3    | Row2-Col4     |
--- | 3  | Row3-Col1    | Row3-Col2     | Row3-Col3    | Row3-Col4     |
--- | 4  | Row4-Col1    | Row4-Col2     | Row4-Col3    | Row4-Col4     |
--- | 5  | Row5-Col1    | Row5-Col2     | Row5-Col3    | Row5-Col4     |
--- | 6  | Row6-Col1    | Row6-Col2     | Row6-Col3    | Row6-Col4     |
--- | 7  | Row7-Col1    | Row7-Col2     | Row7-Col3    | Row7-Col4     |
--- | 8  | Row8-Col1    | Row8-Col2     | Row8-Col3    | Row8-Col4     |
--- +----+--------------+---------------+--------------+---------------+
 
 -- | A sample table
 sampleMiniFrame :: MiniFrame
@@ -135,7 +121,7 @@ fromColumns name header columns
     | header == nub header = MiniFrame name header (transpose columns)
     | otherwise            = MiniFrame "DUPLICATE COLUMN NAMES!" header (transpose columns)
 
--- Build a table from the CSV file
+-- | Build a table from the CSV file
 fromCSV :: String -> IO MiniFrame
 fromCSV file = do
     contents <- readFile file
@@ -169,8 +155,8 @@ getColumns (MiniFrame _ _ rows) = transpose rows
 -- | Get a row by ID
 getRowByID :: MiniFrame -> ID -> Row
 getRowByID (MiniFrame _ _ rows) id
-    | id >= 1 && id <= length rows = rows !! (id - 1)
-    | otherwise                  = []
+    | id >= 0 && id <= length rows - 1 = rows !! id
+    | otherwise                        = []
 
 -- | Get a column by name
 getColumnByName :: MiniFrame -> Name -> Column
@@ -221,10 +207,10 @@ addColumn (MiniFrame name header rows) newColumnName newColumn = MiniFrame name 
         newRows   = transpose (transpose rows ++ [newColumn])
 
 -- | Insert a row at the given ID
-insertRow :: MiniFrame -> Row -> ID -> MiniFrame
-insertRow (MiniFrame name header rows) newRow id = MiniFrame name header newRows
+insertRow :: MiniFrame -> ID -> Row -> MiniFrame
+insertRow (MiniFrame name header rows) id newRow = MiniFrame name header newRows
     where
-        splitID = splitAt (id - 1) rows
+        splitID = splitAt id rows
         newRows = fst splitID ++ [newRow] ++ snd splitID
 
 -- | Insert a column between two column names
@@ -241,8 +227,8 @@ insertColumn (MiniFrame name header rows) leftColumnName rightColumnName newRow 
 -- | Remove a row by ID
 removeRowByID :: MiniFrame -> ID -> MiniFrame 
 removeRowByID miniframe@(MiniFrame name header rows) id
-    | id < 1 || id > length rows = miniframe
-    | otherwise                  = MiniFrame name header (take (id - 1) rows ++ drop id rows)
+    | id < 0 || id > length rows - 1 = miniframe
+    | otherwise                      = MiniFrame name header (take id rows ++ drop (id + 1) rows)
 
 -- | Remove a column by name
 removeColumnByName :: MiniFrame -> Name -> MiniFrame
@@ -303,23 +289,25 @@ printRows (MiniFrame _ _ rows) = mapM_ print rows
 printMiniFrame :: MiniFrame -> IO ()
 printMiniFrame (MiniFrame name header rows) = do
     putStrLn (" " ++ replicate (length name + 2) '_' ++ "\n| " ++ name ++ " |\n " ++ replicate (length name + 2) '-' ++ "\n")
-    putStrLn formattedDashes
+    putStrLn (intercalate "-+-" formattedDashes)
     putStrLn (intercalate " | " formattedHeader)
-    putStrLn formattedDashes
+    putStrLn (intercalate "-+-" formattedDashes)
     mapM_ (putStrLn . intercalate " | ") rowsForPrettyPrint
-    putStrLn formattedDashes
+    putStrLn (intercalate "-+-" formattedDashes)
     where
         -- Header stuff
         newHeader                 = "| ID" : header
         headerLengthList          = map length newHeader
         -- Rows with ID numbers
-        rowsWithID                = [("| "++ show (i + 1)) : rows !! i | i <- [0..length rows - 1]]
+        rowsWithID                = [("| "++ show i) : rows !! i | i <- [0..length rows - 1]]
         -- Longest strings per column
         maxLengthStringsPerColumn = map (maximum . map length) (transpose rowsWithID)
         -- Comparing maximum string lengths across the header and columns for even spacing
         maxNumOfSpaces            = map (\n -> if uncurry (>) n then fst n else snd n) (zip headerLengthList maxLengthStringsPerColumn)
         -- Dashes without pluses; we add 3 X columnsNum because `intercalate " | "` puts 3 characters, namely ' ', '|', and ' '
-        formattedDashes           = replicate (maximum (map sum [map length i | i <- rowsForPrettyPrint]) + 3 * length (transpose rows)) '-'
+        formattedDashesHelper1    = [fst i ++ replicate (snd i - length (fst i)) '-' | i <- zip (map ((`replicate` '-') . length) newHeader) maxNumOfSpaces]
+        formattedDashesHelper2    = init formattedDashesHelper1 ++ [last formattedDashesHelper1 ++ "-+"]
+        formattedDashes           = ("+" ++ tail (head formattedDashesHelper2)) : tail formattedDashesHelper2
         -- Formatted header
         formattedHeaderHelper     = [fst i ++ replicate (snd i - length (fst i)) ' ' | i <- zip newHeader maxNumOfSpaces]
         formattedHeader           = init formattedHeaderHelper ++ [last formattedHeaderHelper ++ " |"]
