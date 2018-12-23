@@ -11,7 +11,9 @@ Portability :  portable
 This is an implementation of a data frame which comes with various common-for-data frames operations
 as well as some relational algebra goodness.
 
-The project is licensed under MIT so feel free to use/reuse the module or improve its functionalities.
+You can read more about relational algebra by following the link: https://en.wikipedia.org/wiki/Relational_algebra.
+
+The project is licensed under MIT so feel free to use the module or improve its functionalities.
 -}
 
 -- ====================================================================================================
@@ -55,9 +57,8 @@ module MiniFrame
     , entriesNum                -- MiniFrame -> Int
 
     -- Modification
-    , renameMiniFrame           -- MiniFrame -> Name -> MiniFrame
-    , renameColumn              -- MiniFrame -> Name -> Name -> MiniFrame
-    , addRow                    -- MiniFrame -> Row -> MiniFrame
+    , renameMiniFrame           -- Name -> MiniFrame -> MiniFrame
+    , addRow                    -- Row -> MiniFrame -> MiniFrame
     , addColumn                 -- MiniFrame -> Name -> Column -> MiniFrame
     , insertRow                 -- MiniFrame -> ID -> Row -> MiniFrame
     , insertColumn              -- MiniFrame -> Name -> Name -> Column -> MiniFrame
@@ -65,17 +66,19 @@ module MiniFrame
     , removeColumnByName        -- MiniFrame -> Name -> MiniFrame
 
     -- Relational algebra
-    -- , project                   -- MiniFrame -> MiniFrame -> MiniFrame
-    , select                    -- MiniFrame -> MiniFrame -> MiniFrame
-    -- , intersect                 -- MiniFrame -> MiniFrame -> MiniFrame
-    , intersect                 -- MiniFrame -> MiniFrame -> MiniFrame
     , union                     -- MiniFrame -> MiniFrame -> MiniFrame
+    , (\\)                      -- MiniFrame -> MiniFrame -> MiniFrame
+    , intersect                 -- MiniFrame -> MiniFrame -> MiniFrame
+    , project                   -- [Name] -> MiniFrame -> MiniFrame
+    , select                    -- (Header -> Row -> Bool) -> MiniFrame -> MiniFrame
+    , rename                    -- Name -> Name -> MiniFrame -> MiniFrame
+    -- , join                      -- MiniFrame -> MiniFrame -> MiniFrame
 
     -- Pretty-printing
     , printName                 -- MiniFrame -> IO ()
     , printHeader               -- MiniFrame -> IO ()
     , printRows                 -- MiniFrame -> IO ()
-    , printMiniFrame            -- MiniFrame -> IO ()
+    , prettyPrint               -- MiniFrame -> IO ()
     ) where
 
 import qualified Data.List as List
@@ -101,7 +104,7 @@ sampleMiniFrame = MiniFrame name header rows
     where
         name   = "MiniFrame"
         header = ["First Column","Second Column","Third Column","Fourth Column"]
-        rows   = [["Row1-Col1","Anomaly-Row1-Col2","Row1-Col3","Row1-Col4"],["Row2-Col1","Row2-Col2","Row2-Col3","Row2-Col4"],
+        rows   = [["Row1-Col1","Row1-Col2","Row1-Col3","Row1-Col4"],["Row2-Col1","Row2-Col2","Row2-Col3","Row2-Col4"],
                   ["Row3-Col1","Row3-Col2","Row3-Col3","Row3-Col4"],["Row4-Col1","Row4-Col2","Row4-Col3","Row4-Col4"],
                   ["Row5-Col1","Row5-Col2","Row5-Col3","Row5-Col4"],["Row6-Col1","Row6-Col2","Row6-Col3","Row6-Col4"],
                   ["Row7-Col1","Row7-Col2","Row7-Col3","Row7-Col4"],["Row8-Col1","Row8-Col2","Row8-Col3","Row8-Col4"]]
@@ -164,21 +167,12 @@ entriesNum table = rowsNum table * columnsNum table
 -- ----------------------------------------------------------------------------------------------------
 
 -- | Rename the table
-renameMiniFrame :: MiniFrame -> Name -> MiniFrame
-renameMiniFrame (MiniFrame name header rows) newName = MiniFrame newName header rows
-
--- | Rename a column by name
-renameColumn :: MiniFrame -> Name -> Name -> MiniFrame
-renameColumn miniframe@(MiniFrame name header rows) oldColumnName newColumnName
-    | oldColumnName `elem` header = MiniFrame name newHeader rows
-    | otherwise                   = miniframe
-    where
-        index     = fromJust (List.elemIndex oldColumnName header)
-        newHeader = take index header ++ [newColumnName] ++ drop (index + 1) header
+renameMiniFrame :: Name -> MiniFrame -> MiniFrame
+renameMiniFrame newName (MiniFrame name header rows) = MiniFrame newName header rows
 
 -- | Add a row to the end of the table
-addRow :: MiniFrame -> Row -> MiniFrame
-addRow (MiniFrame name header rows) newRow = MiniFrame name header (rows ++ [newRow])
+addRow :: Row -> MiniFrame -> MiniFrame
+addRow newRow (MiniFrame name header rows) = MiniFrame name header (rows ++ [newRow])
 
 -- | Add a column to the end of the table
 addColumn :: MiniFrame -> Name -> Column -> MiniFrame
@@ -221,22 +215,39 @@ removeColumnByName miniframe@(MiniFrame name header rows) columnName
         index     = fromJust (List.elemIndex columnName header)
         newRows   = List.transpose (take index (List.transpose rows) ++ drop (index + 1) (List.transpose rows))
 
+
+-- ----------------------------------------------------------------------------------------------------
+--                                  Relational algebra
+-- 
+-- The operators include union, difference, intersect, project, select, rename, and join.
+-- These implementations could be improved in various ways (more efficient, flexible etc).
+-- Operations like natural join, theta join, equijoin, semijoin, antijoin, division, and cartesian
+-- product will be implemented in the next few updates. Some of the operations such as left and right
+-- outer joins, left and right inner joins, full outer and full inner joins are yet to be implemented.
+--
 -- ----------------------------------------------------------------------------------------------------
 
--- Select operation from relational algebra
-select :: (Header -> Row -> Bool) -> MiniFrame -> MiniFrame
-select function (MiniFrame name header rows) = MiniFrame ("select " ++ name) header (filter (function header) rows)
+-- | Union operation from relational algebra
+union :: MiniFrame -> MiniFrame -> MiniFrame
+union (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows)
+    | header /= otherHeader = error "Header mismatch"
+    | otherwise             = MiniFrame newName newHeader newRows
+    where
+        newName   = name ++ " union " ++ otherName
+        newHeader = header
+        newRows   = rows `List.union` otherRows
 
--- Project operation from relational algebra
--- project :: [Name] -> MiniFrame -> MiniFrame
--- project columns (MiniFrame name header rows) =
+-- | Difference operation from relational algebra
+(\\) :: MiniFrame -> MiniFrame -> MiniFrame
+(\\) (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows)
+    | header /= otherHeader = error "Header mismatch"
+    | otherwise             = MiniFrame newName newHeader newRows
+    where
+        newName   = name ++ " difference " ++ otherName
+        newHeader = header
+        newRows   = rows List.\\ otherRows
 
--- Join operation from relational algebra
--- join :: MiniFrame -> MiniFrame -> Column -> MiniFrame
--- join (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows) onColumn
-    -- | 
-
--- Intersect operation from relational algebra
+-- | Intersect operation from relational algebra
 intersect :: MiniFrame -> MiniFrame -> MiniFrame
 intersect (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows)
     | header /= otherHeader = error "Header mismatch"
@@ -246,16 +257,54 @@ intersect (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRow
         newHeader = header
         newRows   = rows `List.intersect` otherRows
 
--- Union operation from relation algebra
-union :: MiniFrame -> MiniFrame -> MiniFrame
-union (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows)
-    | header /= otherHeader = error "Header mismatch"
-    | otherwise             = MiniFrame newName newHeader newRows
-    where
-        newName   = name ++ " intersect " ++ otherName
-        newHeader = header
-        newRows   = rows `List.union` otherRows
+-- Note that this won't work if the user does not pass the list of columns in the right order.
+-- This is due to how `List.isSubsequenceOf` works. Will have to reimplement this operation so that
+-- the order does not play any role in determining the output.
 
+-- | Project operation from relational algebra
+project :: [Name] -> MiniFrame -> MiniFrame
+project columnNames miniframe@(MiniFrame name header rows)
+    | columnNames `List.isSubsequenceOf` header = MiniFrame newName newHeader newRows
+    | otherwise                                 = error "Header mismatch - put the columns in the right order!"
+    where
+        newName   = "Projected " ++ name
+        newHeader = columnNames
+        newRows   = List.transpose (map (columnByName miniframe) columnNames)
+
+-- | Select operation from relational algebra
+select :: (Header -> Row -> Bool) -> MiniFrame -> MiniFrame
+select function (MiniFrame name header rows) = MiniFrame ("Selected " ++ name) header (filter (function header) rows)
+
+-- | Rename operation from relational algebra
+rename :: Name -> Name -> MiniFrame -> MiniFrame
+rename oldColumnName newColumnName miniframe@(MiniFrame name header rows)
+    | oldColumnName `elem` header = MiniFrame name newHeader rows
+    | otherwise                   = miniframe
+    where
+        index     = fromJust (List.elemIndex oldColumnName header)
+        newHeader = take index header ++ [newColumnName] ++ drop (index + 1) header
+
+-- -- | Join operation from relational algebra
+-- join :: MiniFrame -> MiniFrame -> Column -> MiniFrame
+-- join (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows) onColumn
+
+-- ----------------------------------------------------------------------------------------------------
+--
+--                                  Printing and Pretty-printing
+-- 
+-- Currently, there are four printing tools provided with this package.
+--
+--         'printName'   : Prints the name of the MiniFrame
+--         'printName'   : Prints the header of the MiniFrame
+--         'printRows'   : Prints the rows of the MiniFrame
+--         'prettyPrint' : Pretty-prints the MiniFrame
+--
+-- 'project' and 'pretty-print' could be used in conjunction to display chunks of the MiniFrame,
+-- however, it would be a lot more convenient to have separate implementations for such printing.
+-- 
+-- Another idea is to have two functions 'show' and 'prettyPrint'. The first one would be the string
+-- representation of the MiniFrame with the latter one being the IO.
+-- 
 -- ----------------------------------------------------------------------------------------------------
 
 -- | Print the name of the table
@@ -271,8 +320,8 @@ printRows :: MiniFrame -> IO ()
 printRows (MiniFrame _ _ rows) = mapM_ print rows
 
 -- | Print the table
-printMiniFrame :: MiniFrame -> IO ()
-printMiniFrame (MiniFrame name header rows) = do
+prettyPrint :: MiniFrame -> IO ()
+prettyPrint (MiniFrame name header rows) = do
     putStrLn (" " ++ replicate (length name + 2) '_' ++ "\n| " ++ name ++ " |\n " ++ replicate (length name + 2) '-' ++ "\n")
     putStrLn (List.intercalate "-+-" formattedDashes)
     putStrLn (List.intercalate " | " formattedHeader)
