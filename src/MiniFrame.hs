@@ -57,11 +57,11 @@ module MiniFrame
     , entriesNum                -- MiniFrame -> Int
 
     -- Modification
-    , renameMiniFrame           -- Name -> MiniFrame -> MiniFrame
+    , renameMF                  -- Name -> MiniFrame -> MiniFrame
     , addRow                    -- Row -> MiniFrame -> MiniFrame
-    , addColumn                 -- MiniFrame -> Name -> Column -> MiniFrame
-    , insertRow                 -- MiniFrame -> ID -> Row -> MiniFrame
-    , insertColumn              -- MiniFrame -> Name -> Name -> Column -> MiniFrame
+    , addColumn                 -- Name -> Column -> MiniFrame -> MiniFrame
+    , insertRow                 -- ID -> Row -> MiniFrame -> MiniFrame
+    , insertColumn              -- Name -> Name -> Column -> MiniFrame -> MiniFrame
     , removeRowByID             -- MiniFrame -> ID -> MiniFrame
     , removeColumnByName        -- MiniFrame -> Name -> MiniFrame
 
@@ -72,7 +72,9 @@ module MiniFrame
     , project                   -- [Name] -> MiniFrame -> MiniFrame
     , select                    -- (Header -> Row -> Bool) -> MiniFrame -> MiniFrame
     , rename                    -- Name -> Name -> MiniFrame -> MiniFrame
-    -- , join                      -- MiniFrame -> MiniFrame -> MiniFrame
+    , njoin                     -- MiniFrame -> MiniFrame -> MiniFrame
+    , thetaJoin                 -- (Header -> Row -> Bool) -> MiniFrame -> MiniFrame -> MiniFrame
+    , cartprod                  -- MiniFrame -> MiniFrame -> MiniFrame
 
     -- Pretty-printing
     , printName                 -- MiniFrame -> IO ()
@@ -118,6 +120,7 @@ fromColumns :: Name -> Header -> [Column] -> MiniFrame
 fromColumns name header columns = MiniFrame name header (List.transpose columns)
 
 -- | Build a table from the CSV file
+-- This has to be modified. It does not work with commas inside csv.
 fromCSV :: String -> IO MiniFrame
 fromCSV file = do
     contents <- readFile file
@@ -167,31 +170,31 @@ entriesNum table = rowsNum table * columnsNum table
 -- ----------------------------------------------------------------------------------------------------
 
 -- | Rename the table
-renameMiniFrame :: Name -> MiniFrame -> MiniFrame
-renameMiniFrame newName (MiniFrame name header rows) = MiniFrame newName header rows
+renameMF :: Name -> MiniFrame -> MiniFrame
+renameMF newName (MiniFrame name header rows) = MiniFrame newName header rows
 
 -- | Add a row to the end of the table
 addRow :: Row -> MiniFrame -> MiniFrame
 addRow newRow (MiniFrame name header rows) = MiniFrame name header (rows ++ [newRow])
 
 -- | Add a column to the end of the table
-addColumn :: MiniFrame -> Name -> Column -> MiniFrame
-addColumn (MiniFrame name header rows) newColumnName newColumn = MiniFrame name newHeader newRows
+addColumn :: Name -> Column -> MiniFrame -> MiniFrame
+addColumn newColumnName newColumn (MiniFrame name header rows) = MiniFrame name newHeader newRows
     where
         newHeader = header ++ [newColumnName]
         newRows   = List.transpose (List.transpose rows ++ [newColumn])
 
 -- | Insert a row at the given ID
-insertRow :: MiniFrame -> ID -> Row -> MiniFrame
-insertRow (MiniFrame name header rows) id newRow = MiniFrame name header newRows
+insertRow :: ID -> Row -> MiniFrame -> MiniFrame
+insertRow id newRow (MiniFrame name header rows) = MiniFrame name header newRows
     where
         splitID = splitAt id rows
         newRows = fst splitID ++ [newRow] ++ snd splitID
 
 -- | Insert a column between two column names
 -- Fix this!!
-insertColumn :: MiniFrame -> Name -> Name -> Column -> MiniFrame
-insertColumn (MiniFrame name header rows) leftColumnName rightColumnName newRow = MiniFrame name header newRows
+insertColumn :: Name -> Name -> Column -> MiniFrame -> MiniFrame
+insertColumn leftColumnName rightColumnName newRow (MiniFrame name header rows) = MiniFrame name header newRows
     where
         leftIndex  = fromJust (List.elemIndex leftColumnName header)
         rightIndex = fromJust (List.elemIndex rightColumnName header)
@@ -215,16 +218,14 @@ removeColumnByName miniframe@(MiniFrame name header rows) columnName
         index     = fromJust (List.elemIndex columnName header)
         newRows   = List.transpose (take index (List.transpose rows) ++ drop (index + 1) (List.transpose rows))
 
-
 -- ----------------------------------------------------------------------------------------------------
---                                  Relational algebra
+--                                   Relational algebra
 -- 
 -- The operators include union, difference, intersect, project, select, rename, and join.
 -- These implementations could be improved in various ways (more efficient, flexible etc).
 -- Operations like natural join, theta join, equijoin, semijoin, antijoin, division, and cartesian
 -- product will be implemented in the next few updates. Some of the operations such as left and right
 -- outer joins, left and right inner joins, full outer and full inner joins are yet to be implemented.
---
 -- ----------------------------------------------------------------------------------------------------
 
 -- | Union operation from relational algebra
@@ -278,18 +279,47 @@ select function (MiniFrame name header rows) = MiniFrame ("Selected " ++ name) h
 -- | Rename operation from relational algebra
 rename :: Name -> Name -> MiniFrame -> MiniFrame
 rename oldColumnName newColumnName miniframe@(MiniFrame name header rows)
-    | oldColumnName `elem` header = MiniFrame name newHeader rows
+    | oldColumnName `elem` header = MiniFrame newName newHeader newRows
     | otherwise                   = miniframe
     where
         index     = fromJust (List.elemIndex oldColumnName header)
+        newName   = name
         newHeader = take index header ++ [newColumnName] ++ drop (index + 1) header
+        newRows   = rows
 
--- -- | Join operation from relational algebra
--- join :: MiniFrame -> MiniFrame -> Column -> MiniFrame
--- join (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows) onColumn
+
+-- The following is a proto version that needs to be tested
+
+-- | Natural join operation from relational algebra
+njoin :: MiniFrame -> MiniFrame -> MiniFrame
+njoin miniframe@(MiniFrame name header rows) otherMiniframe@(MiniFrame otherName otherHeader otherRows)
+    | null commonColumnNames  = error "No common column names"
+    | columns \= otherColumns = error "No common columns"
+    | otherwise               = MiniFrame newName newHeader newRows
+    where
+        commonColumnNames = header `List.intersect` otherHeader
+        columns           = map (columnByName miniframe) commonColumnNames
+        otherColumns      = map (columnByName otherMiniframe) commonColumnNames
+        ----
+        newName           = name ++ " njoin " ++ otherName
+        newHeader         = nub (header ++ otherHeader)
+        newRows           = nub (rows ++ otherRows)
+
+-- | Theta join operation from relational algebra
+thetaJoin :: (Header -> Row -> Bool) -> MiniFrame -> MiniFrame -> MiniFrame
+thetaJoin function miniframe otherMiniframe = select function (njoin miniframe otherMiniframe)
+
+-- | Cartesian product operation from relational algebra
+cartprod :: MiniFrame -> MiniFrame -> MiniFrame
+cartprod (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows)
+    | header List.\\ otherHeader /= header = error "Cannot perform cartesian product on duplicate column names"
+    | otherwise                            = MiniFrame newName newHeader newRows
+    where
+        newName   = name ++ " cartprod " ++ otherName
+        newHeader = header ++ otherHeader
+        newRows   = [x ++ y | x <- rows, y <- otherRows]
 
 -- ----------------------------------------------------------------------------------------------------
---
 --                                  Printing and Pretty-printing
 -- 
 -- Currently, there are four printing tools provided with this package.
@@ -304,7 +334,6 @@ rename oldColumnName newColumnName miniframe@(MiniFrame name header rows)
 -- 
 -- Another idea is to have two functions 'show' and 'prettyPrint'. The first one would be the string
 -- representation of the MiniFrame with the latter one being the IO.
--- 
 -- ----------------------------------------------------------------------------------------------------
 
 -- | Print the name of the table
@@ -337,7 +366,7 @@ prettyPrint (MiniFrame name header rows) = do
         -- Longest strings per column
         maxLengthStringsPerColumn = map (maximum . map length) (List.transpose rowsWithID)
         -- Comparing maximum string lengths across the header and columns for even spacing
-        maxNumOfSpaces            = map (\n -> if uncurry (>) n then fst n else snd n) (zip headerLengthList maxLengthStringsPerColumn)
+        maxNumOfSpaces            = zipWith max headerLengthList maxLengthStringsPerColumn
         -- Dashes without pluses; we add 3 X columnsNum because `intercalate " | "` puts 3 characters, namely ' ', '|', and ' '
         formattedDashesHelper1    = [fst i ++ replicate (snd i - length (fst i)) '-' | i <- zip (map ((`replicate` '-') . length) newHeader) maxNumOfSpaces]
         formattedDashesHelper2    = init formattedDashesHelper1 ++ [last formattedDashesHelper1 ++ "-+"]
