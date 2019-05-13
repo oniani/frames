@@ -84,7 +84,7 @@ module MiniFrame
     ) where
 
 import qualified Data.List as List
-import Data.Maybe
+import qualified Data.Maybe as Maybe
 
 type ID     = Int               -- ID    : Int
 type Name   = String            -- Name  : String
@@ -151,7 +151,7 @@ columnByName (MiniFrame _ header rows) columnName
     | columnName `elem` header = List.transpose rows !! index
     | otherwise                = []
     where
-        index = fromJust (List.elemIndex columnName header)
+        index = Maybe.fromJust (List.elemIndex columnName header)
 
 -- ----------------------------------------------------------------------------------------------------
 
@@ -196,8 +196,8 @@ insertRow id newRow (MiniFrame name header rows) = MiniFrame name header newRows
 insertColumn :: Name -> Name -> Column -> MiniFrame -> MiniFrame
 insertColumn leftColumnName rightColumnName newRow (MiniFrame name header rows) = MiniFrame name header newRows
     where
-        leftIndex  = fromJust (List.elemIndex leftColumnName header)
-        rightIndex = fromJust (List.elemIndex rightColumnName header)
+        leftIndex  = Maybe.fromJust (List.elemIndex leftColumnName header)
+        rightIndex = Maybe.fromJust (List.elemIndex rightColumnName header)
         newRows    = take leftIndex (List.transpose rows) ++ [newRow] ++ drop rightIndex (List.transpose rows)
 
 -- ----------------------------------------------------------------------------------------------------
@@ -215,7 +215,7 @@ removeColumnByName miniframe@(MiniFrame name header rows) columnName
     | otherwise                = miniframe
     where
         newHeader = List.delete columnName header
-        index     = fromJust (List.elemIndex columnName header)
+        index     = Maybe.fromJust (List.elemIndex columnName header)
         newRows   = List.transpose (take index (List.transpose rows) ++ drop (index + 1) (List.transpose rows))
 
 -- ----------------------------------------------------------------------------------------------------
@@ -282,7 +282,7 @@ rename oldColumnName newColumnName miniframe@(MiniFrame name header rows)
     | oldColumnName `elem` header = MiniFrame newName newHeader newRows
     | otherwise                   = miniframe
     where
-        index     = fromJust (List.elemIndex oldColumnName header)
+        index     = Maybe.fromJust (List.elemIndex oldColumnName header)
         newName   = name
         newHeader = take index header ++ [newColumnName] ++ drop (index + 1) header
         newRows   = rows
@@ -294,7 +294,7 @@ rename oldColumnName newColumnName miniframe@(MiniFrame name header rows)
 njoin :: MiniFrame -> MiniFrame -> MiniFrame
 njoin miniframe@(MiniFrame name header rows) otherMiniframe@(MiniFrame otherName otherHeader otherRows)
     | null commonColumnNames  = error "No common column names"
-    | columns \= otherColumns = error "No common columns"
+    | columns                 /= otherColumns = error "No common columns"
     | otherwise               = MiniFrame newName newHeader newRows
     where
         commonColumnNames = header `List.intersect` otherHeader
@@ -302,8 +302,8 @@ njoin miniframe@(MiniFrame name header rows) otherMiniframe@(MiniFrame otherName
         otherColumns      = map (columnByName otherMiniframe) commonColumnNames
         ----
         newName           = name ++ " njoin " ++ otherName
-        newHeader         = nub (header ++ otherHeader)
-        newRows           = nub (rows ++ otherRows)
+        newHeader         = List.nub (header ++ otherHeader)
+        newRows           = List.nub (rows ++ otherRows)
 
 -- | Theta join operation from relational algebra
 thetaJoin :: (Header -> Row -> Bool) -> MiniFrame -> MiniFrame -> MiniFrame
