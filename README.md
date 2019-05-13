@@ -1,5 +1,5 @@
 # MiniFrames
 Minimal data frames in Haskell.
 
-### License
+## License
 [GNU General Public License v3.0](LICENSE)

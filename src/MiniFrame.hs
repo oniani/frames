@@ -2,7 +2,7 @@
 Module      :  MiniFrame.hs
 Description :  Module implements the MiniFrame data type and its core functionalities
 Copyright   :  (c) 2018 David Oniani
-License     :  MIT
+License     :  GNU General Public License v3.0
 
 Maintainer  :  onianidavid@gmail.com
 Stability   :  provisional
@@ -12,8 +12,6 @@ This is an implementation of a data frame which comes with various common-for-da
 as well as some relational algebra goodness.
 
 You can read more about relational algebra by following the link: https://en.wikipedia.org/wiki/Relational_algebra.
-
-The project is licensed under MIT so feel free to use the module or improve its functionalities.
 -}
 
 -- ====================================================================================================
