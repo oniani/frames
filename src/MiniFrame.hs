@@ -15,15 +15,15 @@ You can read more about relational algebra by following the link: https://en.wik
 -}
 
 -- ====================================================================================================
--- 
+--
 -- TODO:
 --
 -- 1. Handle all the edge cases (might require a heavy use of Data.Maybe)
 --
 -- 2. Implement relational algebra operators
--- 
+--
 -- 3. Optimize functions
--- 
+--
 -- ====================================================================================================
 
 module MiniFrame
@@ -35,7 +35,7 @@ module MiniFrame
     , Row                       -- [String]
     , Column                    -- [String]
 
-    -- Creation 
+    -- Creation
     , sampleMiniFrame           -- -> MiniFrame
     , fromRows                  -- Name -> Header -> [Row] -> MiniFrame
     , fromColumns               -- Name -> Header -> [Column] -> MiniFrame
@@ -81,8 +81,13 @@ module MiniFrame
     , prettyPrint               -- MiniFrame -> IO ()
     ) where
 
+import Data.List.Split
+import Data.Either
+
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
+
+import ParseCSV (parseCSV)
 
 type ID     = Int               -- ID    : Int
 type Name   = String            -- Name  : String
@@ -117,19 +122,18 @@ fromRows = MiniFrame
 fromColumns :: Name -> Header -> [Column] -> MiniFrame
 fromColumns name header columns = MiniFrame name header (List.transpose columns)
 
--- | Build a table from the CSV file
--- This has to be modified. It does not work with commas inside csv.
+
+-- | Build a MiniFrame from the CSV file
 fromCSV :: String -> IO MiniFrame
-fromCSV file = do
-    contents <- readFile file
-    let table = [splitBy ',' i | i <- init (splitBy '\n' contents)]
-    return (MiniFrame "MiniFrame" (head table) (tail table))
+fromCSV file
+  | format /= "csv" = error "Unknown file format!"
+  | otherwise       = do contents <- readFile file
+                         let csv    = fromRight [] $ parseCSV contents
+                         let header = head csv
+                         let rows   = tail csv
+                         return (MiniFrame "MiniFrame" header rows)
     where
-        splitBy delimiter = foldr fun [[]]
-            where
-                fun character list@(x:xs)
-                    | character == delimiter = []:list
-                    | otherwise              = (character:x):xs
+        format = drop (length file - 3) file
 
 -- ----------------------------------------------------------------------------------------------------
 
@@ -201,7 +205,7 @@ insertColumn leftColumnName rightColumnName newRow (MiniFrame name header rows) 
 -- ----------------------------------------------------------------------------------------------------
 
 -- | Remove a row by ID
-removeRowByID :: MiniFrame -> ID -> MiniFrame 
+removeRowByID :: MiniFrame -> ID -> MiniFrame
 removeRowByID miniframe@(MiniFrame name header rows) id
     | id < 0 || id > length rows - 1 = miniframe
     | otherwise                      = MiniFrame name header (take id rows ++ drop (id + 1) rows)
@@ -218,7 +222,7 @@ removeColumnByName miniframe@(MiniFrame name header rows) columnName
 
 -- ----------------------------------------------------------------------------------------------------
 --                                   Relational algebra
--- 
+--
 -- The operators include union, difference, intersect, project, select, rename, and join.
 -- These implementations could be improved in various ways (more efficient, flexible etc).
 -- Operations like natural join, theta join, equijoin, semijoin, antijoin, division, and cartesian
@@ -319,7 +323,7 @@ cartprod (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows
 
 -- ----------------------------------------------------------------------------------------------------
 --                                  Printing and Pretty-printing
--- 
+--
 -- Currently, there are four printing tools provided with this package.
 --
 --         'printName'   : Prints the name of the MiniFrame
@@ -329,7 +333,7 @@ cartprod (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows
 --
 -- 'project' and 'pretty-print' could be used in conjunction to display chunks of the MiniFrame,
 -- however, it would be a lot more convenient to have separate implementations for such printing.
--- 
+--
 -- Another idea is to have two functions 'show' and 'prettyPrint'. The first one would be the string
 -- representation of the MiniFrame with the latter one being the IO.
 -- ----------------------------------------------------------------------------------------------------
