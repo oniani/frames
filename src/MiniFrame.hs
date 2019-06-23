@@ -1,30 +1,34 @@
 {- |
 Module      :  MiniFrame.hs
-Description :  Module implements the MiniFrame data type and its core functionalities
-Copyright   :  (c) 2018 David Oniani
+Description :  Module implements MiniFrame data type and its core functionalities
+Copyright   :  (c) 2019 David Oniani
 License     :  GNU General Public License v3.0
 
 Maintainer  :  onianidavid@gmail.com
-Stability   :  provisional
+Stability   :  experimental
 Portability :  portable
 
-This is an implementation of a data frame which comes with various common-for-data frames operations
-as well as some relational algebra goodness.
+This is an implementation of a data frame which comes with
+various common-for-data frames operations as well as some
+relational algebra goodness.
 
-You can read more about relational algebra by following the link: https://en.wikipedia.org/wiki/Relational_algebra.
+You can read more about relational algebra by following the link:
+    https://en.wikipedia.org/wiki/Relational_algebra.
 -}
 
--- ====================================================================================================
+------------------------------------------------------------------------------
 --
 -- TODO:
+--     * addRow function should throw an error if the number of items in
+--       the row does not match the number of items in the MiniFrame row.
 --
--- 1. Handle all the edge cases (might require a heavy use of Data.Maybe)
+--     * Handle all the edge cases (might require a heavy use of Data.Maybe)
 --
--- 2. Implement relational algebra operators
+--     * Implement relational algebra operators
 --
--- 3. Optimize functions
+--     * Optimize functions
 --
--- ====================================================================================================
+------------------------------------------------------------------------------
 
 module MiniFrame
     ( MiniFrame (..)
@@ -82,12 +86,11 @@ module MiniFrame
     ) where
 
 import Data.List.Split
-import Data.Either
+
+import ParseCSV
 
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
-
-import ParseCSV (parseCSV)
 
 type ID     = Int               -- ID    : Int
 type Name   = String            -- Name  : String
@@ -101,18 +104,22 @@ data MiniFrame = MiniFrame
     , rows   ::  [Row] }        -- Rows of the MiniFrame
     deriving (Eq, Show)
 
--- ----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 -- | A sample table
 sampleMiniFrame :: MiniFrame
 sampleMiniFrame = MiniFrame name header rows
     where
         name   = "MiniFrame"
-        header = ["First Column","Second Column","Third Column","Fourth Column"]
-        rows   = [["Row1-Col1","Row1-Col2","Row1-Col3","Row1-Col4"],["Row2-Col1","Row2-Col2","Row2-Col3","Row2-Col4"],
-                  ["Row3-Col1","Row3-Col2","Row3-Col3","Row3-Col4"],["Row4-Col1","Row4-Col2","Row4-Col3","Row4-Col4"],
-                  ["Row5-Col1","Row5-Col2","Row5-Col3","Row5-Col4"],["Row6-Col1","Row6-Col2","Row6-Col3","Row6-Col4"],
-                  ["Row7-Col1","Row7-Col2","Row7-Col3","Row7-Col4"],["Row8-Col1","Row8-Col2","Row8-Col3","Row8-Col4"]]
+        header = ["C1","C2","C3","C4"]
+        rows   = [["R1-C1","R1-C2","R1-C3","R1-C4"],
+                  ["R2-C1","R2-C2","R2-C3","R2-C4"],
+                  ["R3-C1","R3-C2","R3-C3","R3-C4"],
+                  ["R4-C1","R4-C2","R4-C3","R4-C4"],
+                  ["R5-C1","R5-C2","R5-C3","R5-C4"],
+                  ["R6-C1","R6-C2","R6-C3","R6-C4"],
+                  ["R7-C1","R7-C2","R7-C3","R7-C4"],
+                  ["R8-C1","R8-C2","R8-C3","R8-C4"]]
 
 -- | Build a table from rows
 fromRows :: Name -> Header -> [Row] -> MiniFrame
@@ -122,20 +129,19 @@ fromRows = MiniFrame
 fromColumns :: Name -> Header -> [Column] -> MiniFrame
 fromColumns name header columns = MiniFrame name header (List.transpose columns)
 
-
 -- | Build a MiniFrame from the CSV file
 fromCSV :: String -> IO MiniFrame
 fromCSV file
   | format /= "csv" = error "Unknown file format!"
-  | otherwise       = do contents <- readFile file
-                         let csv    = fromRight [] $ parseCSV contents
+  | otherwise       = do csv <- readCSV file
                          let header = head csv
                          let rows   = tail csv
                          return (MiniFrame "MiniFrame" header rows)
     where
         format = drop (length file - 3) file
 
--- ----------------------------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
 
 -- | Get all the columns
 columns :: MiniFrame -> [Column]
@@ -155,7 +161,7 @@ columnByName (MiniFrame _ header rows) columnName
     where
         index = Maybe.fromJust (List.elemIndex columnName header)
 
--- ----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 -- | Get the number of rows
 rowsNum :: MiniFrame -> Int
@@ -169,7 +175,7 @@ columnsNum (MiniFrame _ _ rows) = length (List.transpose rows)
 entriesNum :: MiniFrame -> Int
 entriesNum table = rowsNum table * columnsNum table
 
--- ----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 -- | Rename the table
 renameMF :: Name -> MiniFrame -> MiniFrame
@@ -202,7 +208,7 @@ insertColumn leftColumnName rightColumnName newRow (MiniFrame name header rows) 
         rightIndex = Maybe.fromJust (List.elemIndex rightColumnName header)
         newRows    = take leftIndex (List.transpose rows) ++ [newRow] ++ drop rightIndex (List.transpose rows)
 
--- ----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 -- | Remove a row by ID
 removeRowByID :: MiniFrame -> ID -> MiniFrame
@@ -220,15 +226,17 @@ removeColumnByName miniframe@(MiniFrame name header rows) columnName
         index     = Maybe.fromJust (List.elemIndex columnName header)
         newRows   = List.transpose (take index (List.transpose rows) ++ drop (index + 1) (List.transpose rows))
 
--- ----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 --                                   Relational algebra
 --
--- The operators include union, difference, intersect, project, select, rename, and join.
--- These implementations could be improved in various ways (more efficient, flexible etc).
--- Operations like natural join, theta join, equijoin, semijoin, antijoin, division, and cartesian
--- product will be implemented in the next few updates. Some of the operations such as left and right
--- outer joins, left and right inner joins, full outer and full inner joins are yet to be implemented.
--- ----------------------------------------------------------------------------------------------------
+-- The operators include union, difference, intersect, project, select,
+-- rename,and join. These implementations could be improved in various
+-- ways (more efficient, flexible etc). Operations like natural join,
+-- theta join, equijoin, semijoin, antijoin, division, and cartesian
+-- product will be implemented in the next few updates. Some of the
+-- operations such as left and right outer joins, left and right inner
+-- joins, full outer and full inner joins are yet to be implemented.
+-------------------------------------------------------------------------------
 
 -- | Union operation from relational algebra
 union :: MiniFrame -> MiniFrame -> MiniFrame
@@ -321,8 +329,8 @@ cartprod (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows
         newHeader = header ++ otherHeader
         newRows   = [x ++ y | x <- rows, y <- otherRows]
 
--- ----------------------------------------------------------------------------------------------------
---                                  Printing and Pretty-printing
+-------------------------------------------------------------------------------
+--                   Printing and Pretty-printing
 --
 -- Currently, there are four printing tools provided with this package.
 --
@@ -331,12 +339,14 @@ cartprod (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows
 --         'printRows'   : Prints the rows of the MiniFrame
 --         'prettyPrint' : Pretty-prints the MiniFrame
 --
--- 'project' and 'pretty-print' could be used in conjunction to display chunks of the MiniFrame,
--- however, it would be a lot more convenient to have separate implementations for such printing.
+-- 'project' and 'pretty-print' could be used in conjunction to display
+-- chunks of the MiniFrame, however, it would be a lot more convenient
+-- to have separate implementations for such printing.
 --
--- Another idea is to have two functions 'show' and 'prettyPrint'. The first one would be the string
--- representation of the MiniFrame with the latter one being the IO.
--- ----------------------------------------------------------------------------------------------------
+-- Another idea is to have two functions 'show' and 'prettyPrint'.
+-- The first one would be the string representation of the MiniFrame
+-- with the latter one being the IO.
+-------------------------------------------------------------------------------
 
 -- | Print the name of the table
 printName :: MiniFrame -> IO ()

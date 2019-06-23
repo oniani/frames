@@ -1,23 +1,13 @@
--- The CSV reader is taken from the book Real World Haskell
--- It has minor tweaks and modifications
+-- This CSV reader is the extended version of
+-- that taken from the book Real World Haskell.
+-- Link: http://book.realworldhaskell.org/read/using-parsec.html
 
 module ParseCSV
-    (parseCSV)
+    (readCSV)
     where
 
+import Data.Either
 import Text.ParserCombinators.Parsec
-
-cell    = quotedCell <|>  many       (noneOf ",\n\r")
-line    = sepBy      cell (char ',')
-csvFile = endBy      line eol
-
-quotedCell = do
-    char '"'
-    content <- many quotedChar
-    char '"' <?> "quote at end of cell"
-    return content
-
-quotedChar = noneOf "\"" <|> try (string "\"\"" >> return '"')
 
 eol =   try (string "\n\r")
     <|> try (string "\r\n")
@@ -25,5 +15,23 @@ eol =   try (string "\n\r")
     <|> string "\r"
     <?> "end of line"
 
-parseCSV :: String -> Either ParseError [[String]]
-parseCSV = parse csvFile "(unknown)"
+quotedChar = noneOf "\"" <|> try (string "\"\"" >> return '"')
+
+quotedCell = do char '"'
+                content <- many quotedChar
+                char '"' <?> "quote at end of cell"
+                return content
+
+cell    = quotedCell <|> many (noneOf ",\n\r")
+line    = sepBy cell (char ',')
+csvFile = endBy line eol
+
+parseHelper :: String -> Either ParseError [[String]]
+parseHelper = parse csvFile "(unknown)"
+
+parseCSV :: String -> [[String]]
+parseCSV input = fromRight [] (parseHelper input)
+
+readCSV :: String -> IO [[String]]
+readCSV filename = do contents <- readFile filename
+                      return (parseCSV contents)
