@@ -31,24 +31,15 @@ You can read more about relational algebra by following the link:
 ------------------------------------------------------------------------------
 
 module MiniFrame
-    ( MiniFrame (..)
-    -- Types
-    , ID                        -- Int
-    , Name                      -- String
-    , Header                    -- [Name]
-    , Row                       -- [String]
-    , Column                    -- [String]
-
-    -- Creation
-    , sampleMiniFrame           -- -> MiniFrame
+    ( sampleMiniFrame           -- -> MiniFrame
     , fromRows                  -- Name -> Header -> [Row] -> MiniFrame
     , fromColumns               -- Name -> Header -> [Column] -> MiniFrame
     , fromCSV                   -- String -> IO MiniFrame
 
     -- Retrieval
-    -- name                     -- MiniFrame -> Name
-    -- header                   -- MiniFrame -> Header
-    -- rows                     -- MiniFrame -> [Row]
+    , name                      -- MiniFrame -> Name
+    , header                    -- MiniFrame -> Header
+    , rows                      -- MiniFrame -> [Row]
     , columns                   -- MiniFrame -> [Column]
     , rowByID                   -- MiniFrame -> ID -> Row
     , columnByName              -- MiniFrame -> Name -> Column
@@ -60,7 +51,8 @@ module MiniFrame
 
     -- Modification
     , renameMF                  -- Name -> MiniFrame -> MiniFrame
-    , addRow                    -- Row -> MiniFrame -> MiniFrame
+    , appendRow                 -- Row -> MiniFrame -> MiniFrame
+    , prependRow                -- Row -> MiniFrame -> MiniFrame
     , addColumn                 -- Name -> Column -> MiniFrame -> MiniFrame
     , insertRow                 -- ID -> Row -> MiniFrame -> MiniFrame
     , insertColumn              -- Name -> Name -> Column -> MiniFrame -> MiniFrame
@@ -82,7 +74,7 @@ module MiniFrame
     , printName                 -- MiniFrame -> IO ()
     , printHeader               -- MiniFrame -> IO ()
     , printRows                 -- MiniFrame -> IO ()
-    , prettyPrint               -- MiniFrame -> IO ()
+    , printMF                   -- MiniFrame -> IO ()
     ) where
 
 import Data.List.Split
@@ -92,11 +84,11 @@ import ParseCSV
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 
-type ID     = Int               -- ID    : Int
-type Name   = String            -- Name  : String
-type Header = [String]          -- Header: [String]
-type Row    = [String]          -- Row   : [String]
-type Column = [String]          -- Column: [String]
+type ID     = Int
+type Name   = String
+type Header = [String]
+type Row    = [String]
+type Column = [String]
 
 data MiniFrame = MiniFrame
     { name   ::  Name           -- Name of the MiniFrame
@@ -121,6 +113,10 @@ sampleMiniFrame = MiniFrame name header rows
                   ["R7-C1","R7-C2","R7-C3","R7-C4"],
                   ["R8-C1","R8-C2","R8-C3","R8-C4"]]
 
+-------------------------------------------------------------------------------
+-- Construction
+-------------------------------------------------------------------------------
+
 -- | Build a table from rows
 fromRows :: Name -> Header -> [Row] -> MiniFrame
 fromRows = MiniFrame
@@ -140,9 +136,9 @@ fromCSV file
     where
         format = drop (length file - 3) file
 
-
 -------------------------------------------------------------------------------
-
+-- Retrieval
+-------------------------------------------------------------------------------
 -- | Get all the columns
 columns :: MiniFrame -> [Column]
 columns (MiniFrame _ _ rows) = List.transpose rows
@@ -162,6 +158,8 @@ columnByName (MiniFrame _ header rows) columnName
         index = Maybe.fromJust (List.elemIndex columnName header)
 
 -------------------------------------------------------------------------------
+-- Counting
+-------------------------------------------------------------------------------
 
 -- | Get the number of rows
 rowsNum :: MiniFrame -> Int
@@ -173,19 +171,25 @@ columnsNum (MiniFrame _ _ rows) = length (List.transpose rows)
 
 -- | Get the number of entries
 entriesNum :: MiniFrame -> Int
-entriesNum table = rowsNum table * columnsNum table
+entriesNum mf = rowsNum mf * columnsNum mf
 
 -------------------------------------------------------------------------------
+-- Addition
+-------------------------------------------------------------------------------
 
--- | Rename the table
+-- | Rename the MiniFrame
 renameMF :: Name -> MiniFrame -> MiniFrame
 renameMF newName (MiniFrame name header rows) = MiniFrame newName header rows
 
--- | Add a row to the end of the table
-addRow :: Row -> MiniFrame -> MiniFrame
-addRow newRow (MiniFrame name header rows) = MiniFrame name header (rows ++ [newRow])
+-- | Add a row to the end of the MiniFrame
+appendRow :: Row -> MiniFrame -> MiniFrame
+appendRow newRow (MiniFrame name header rows) = MiniFrame name header (rows ++ [newRow])
 
--- | Add a column to the end of the table
+-- | Add a row to the beginning of the MiniFrame
+prependRow :: Row -> MiniFrame -> MiniFrame
+prependRow newRow (MiniFrame name header rows) = MiniFrame name header (newRow : rows)
+
+-- | Add a column to the end of the MiniFrame
 addColumn :: Name -> Column -> MiniFrame -> MiniFrame
 addColumn newColumnName newColumn (MiniFrame name header rows) = MiniFrame name newHeader newRows
     where
@@ -199,15 +203,19 @@ insertRow id newRow (MiniFrame name header rows) = MiniFrame name header newRows
         splitID = splitAt id rows
         newRows = fst splitID ++ [newRow] ++ snd splitID
 
--- | Insert a column between two column names
--- Fix this!!
-insertColumn :: Name -> Name -> Column -> MiniFrame -> MiniFrame
-insertColumn leftColumnName rightColumnName newRow (MiniFrame name header rows) = MiniFrame name header newRows
-    where
-        leftIndex  = Maybe.fromJust (List.elemIndex leftColumnName header)
-        rightIndex = Maybe.fromJust (List.elemIndex rightColumnName header)
-        newRows    = take leftIndex (List.transpose rows) ++ [newRow] ++ drop rightIndex (List.transpose rows)
+-- | Insert a column at the given index (index starts from 0)
+insertColumn :: ID -> Name -> Row -> MiniFrame -> MiniFrame
+insertColumn index newColumnName newColumn (MiniFrame name header rows)
+    | length newColumn /= length rows = error "Wrong column size!"
+    | otherwise = MiniFrame name newHeader newRows
+        where
+            splitIndex  = splitAt index (List.transpose rows)
+            newRows     = List.transpose (fst splitIndex ++ [newColumn] ++ snd splitIndex)
+            splitHIndex = splitAt index header
+            newHeader   = fst splitHIndex ++ [newColumnName] ++ snd splitHIndex
 
+-------------------------------------------------------------------------------
+-- Removal
 -------------------------------------------------------------------------------
 
 -- | Remove a row by ID
@@ -227,7 +235,7 @@ removeColumnByName miniframe@(MiniFrame name header rows) columnName
         newRows   = List.transpose (take index (List.transpose rows) ++ drop (index + 1) (List.transpose rows))
 
 -------------------------------------------------------------------------------
---                                   Relational algebra
+--                         Relational algebra
 --
 -- The operators include union, difference, intersect, project, select,
 -- rename,and join. These implementations could be improved in various
@@ -334,10 +342,10 @@ cartprod (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows
 --
 -- Currently, there are four printing tools provided with this package.
 --
---         'printName'   : Prints the name of the MiniFrame
---         'printName'   : Prints the header of the MiniFrame
---         'printRows'   : Prints the rows of the MiniFrame
---         'prettyPrint' : Pretty-prints the MiniFrame
+--         printName: Prints the name of the MiniFrame
+--         printName: Prints the header of the MiniFrame
+--         printRows: Prints the rows of the MiniFrame
+--         printMF:   Pretty-prints the MiniFrame
 --
 -- 'project' and 'pretty-print' could be used in conjunction to display
 -- chunks of the MiniFrame, however, it would be a lot more convenient
@@ -361,8 +369,8 @@ printRows :: MiniFrame -> IO ()
 printRows (MiniFrame _ _ rows) = mapM_ print rows
 
 -- | Print the table
-prettyPrint :: MiniFrame -> IO ()
-prettyPrint (MiniFrame name header rows) = do
+printMF :: MiniFrame -> IO ()
+printMF (MiniFrame name header rows) = do
     putStrLn (" " ++ replicate (length name + 2) '_' ++ "\n| " ++ name ++ " |\n " ++ replicate (length name + 2) '-' ++ "\n")
     putStrLn (List.intercalate "-+-" formattedDashes)
     putStrLn (List.intercalate " | " formattedHeader)
@@ -379,7 +387,7 @@ prettyPrint (MiniFrame name header rows) = do
         maxLengthStringsPerColumn = map (maximum . map length) (List.transpose rowsWithID)
         -- Comparing maximum string lengths across the header and columns for even spacing
         maxNumOfSpaces            = zipWith max headerLengthList maxLengthStringsPerColumn
-        -- Dashes without pluses; we add 3 X columnsNum because `intercalate " | "` puts 3 characters, namely ' ', '|', and ' '
+        -- Dashes without pluses; we add 3 X columnsNum as `intercalate " | "` puts 3 characters, namely ' ', '|', and ' '
         formattedDashesHelper1    = [fst i ++ replicate (snd i - length (fst i)) '-' | i <- zip (map ((`replicate` '-') . length) newHeader) maxNumOfSpaces]
         formattedDashesHelper2    = init formattedDashesHelper1 ++ [last formattedDashesHelper1 ++ "-+"]
         formattedDashes           = ("+" ++ tail (head formattedDashesHelper2)) : tail formattedDashesHelper2
