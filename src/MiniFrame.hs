@@ -31,7 +31,9 @@ You can read more about relational algebra by following the link:
 ------------------------------------------------------------------------------
 
 module MiniFrame
-    ( sampleMiniFrame           -- -> MiniFrame
+    ( sample                    -- -> MiniFrame
+
+    -- Construction
     , fromRows                  -- Name -> Header -> [Row] -> MiniFrame
     , fromColumns               -- Name -> Header -> [Column] -> MiniFrame
     , fromCSV                   -- String -> IO MiniFrame
@@ -44,7 +46,7 @@ module MiniFrame
     , rowByID                   -- MiniFrame -> ID -> Row
     , columnByName              -- MiniFrame -> Name -> Column
 
-    -- Dimension
+    -- Dimensions
     , rowsNum                   -- MiniFrame -> Int
     , columnsNum                -- MiniFrame -> Int
     , entriesNum                -- MiniFrame -> Int
@@ -83,6 +85,7 @@ import ParseCSV
 
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
+import qualified Data.Char as Char
 
 type ID     = Int
 type Name   = String
@@ -91,16 +94,16 @@ type Row    = [String]
 type Column = [String]
 
 data MiniFrame = MiniFrame
-    { name   ::  Name           -- Name of the MiniFrame
-    , header ::  Header         -- Header columns of the MiniFrame
-    , rows   ::  [Row] }        -- Rows of the MiniFrame
+    { _name   :: Name           -- Name of the MiniFrame
+    , _header :: Header         -- Header columns of the MiniFrame
+    , _rows   :: [Row] }        -- Rows of the MiniFrame
     deriving (Eq, Show)
 
 -------------------------------------------------------------------------------
 
--- | A sample table
-sampleMiniFrame :: MiniFrame
-sampleMiniFrame = MiniFrame name header rows
+-- | A sample MiniFrame
+sample :: MiniFrame
+sample = MiniFrame name header rows
     where
         name   = "MiniFrame"
         header = ["C1","C2","C3","C4"]
@@ -129,16 +132,29 @@ fromColumns name header columns = MiniFrame name header (List.transpose columns)
 fromCSV :: String -> IO MiniFrame
 fromCSV file
   | format /= "csv" = error "Unknown file format!"
-  | otherwise       = do csv <- readCSV file
-                         let header = head csv
-                         let rows   = tail csv
+  | otherwise       = do csvData <- readCSV file
+                         let header = head csvData
+                         let rows   = tail csvData
                          return (MiniFrame "MiniFrame" header rows)
     where
-        format = drop (length file - 3) file
+        format = map Char.toLower $ drop (length file - 3) file
 
 -------------------------------------------------------------------------------
 -- Retrieval
 -------------------------------------------------------------------------------
+
+-- | Get the name
+name :: MiniFrame -> Name
+name (MiniFrame name _ _ ) = name
+
+-- | Get the header
+header :: MiniFrame -> Header
+header (MiniFrame _ header _ ) = header
+
+-- | Get the rows
+rows :: MiniFrame -> [Row]
+rows (MiniFrame _ _ rows ) = rows
+
 -- | Get all the columns
 columns :: MiniFrame -> [Column]
 columns (MiniFrame _ _ rows) = List.transpose rows
@@ -146,8 +162,8 @@ columns (MiniFrame _ _ rows) = List.transpose rows
 -- | Get a row by ID
 rowByID :: MiniFrame -> ID -> Row
 rowByID (MiniFrame _ _ rows) id
-    | id >= 0 && id <= length rows - 1 = rows !! id
-    | otherwise                        = []
+    | id < 0 || id >= length rows = error "Index out of bounds"
+    | otherwise = rows !! id
 
 -- | Get a column by name
 columnByName :: MiniFrame -> Name -> Column
@@ -158,7 +174,7 @@ columnByName (MiniFrame _ header rows) columnName
         index = Maybe.fromJust (List.elemIndex columnName header)
 
 -------------------------------------------------------------------------------
--- Counting
+-- Dimensions
 -------------------------------------------------------------------------------
 
 -- | Get the number of rows
