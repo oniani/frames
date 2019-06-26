@@ -1,26 +1,32 @@
 {- |
-Module      :  MiniFrame.hs
-Description :  Module implements MiniFrame data type and its core functionalities
-Copyright   :  (c) 2019 David Oniani
+Module      :  Miniframe.hs
+Created     :  2019/06/26 03:29:55 PM
+Description :  This is a description of the module
+Copyright   :  (c) 2018 David Oniani
 License     :  GNU General Public License v3.0
 
 Maintainer  :  onianidavid@gmail.com
 Stability   :  experimental
 Portability :  portable
 
-This is an implementation of a data frame which comes with
-various common-for-data frames operations as well as some
-relational algebra goodness.
+License:
+    The code is licensed under GNU General Public License v3.0.
+    Please read the LICENSE file in this distribution for details
 
-You can read more about relational algebra by following the link:
-    https://en.wikipedia.org/wiki/Relational_algebra.
+Description:
+    This is an implementation of a data frame which comes with
+    various common-for-data frames operations as well as some
+    relational algebra goodness.
+
+    Read more about relational algebra by following the link:
+        https://en.wikipedia.org/wiki/Relational_algebra.
 -}
 
 ------------------------------------------------------------------------------
 --
 -- TODO:
 --     * addRow function should throw an error if the number of items in
---       the row does not match the number of items in the MiniFrame row.
+--       the row does not match the number of items in the Miniframe row.
 --
 --     * Handle all the edge cases (might require a heavy use of Data.Maybe)
 --
@@ -30,62 +36,62 @@ You can read more about relational algebra by following the link:
 --
 ------------------------------------------------------------------------------
 
-module MiniFrame
+module Miniframe
     (
     -- Data types
-      MiniFrame (..)
+      Miniframe (..)
     , Name
     , Header
     , Row
     , Column
 
     -- Construction
-    , sample                    -- -> MiniFrame
-    , fromNull                  -- -> MiniFrame
-    , fromRows                  -- Name -> Header -> [Row] -> MiniFrame
-    , fromColumns               -- Name -> Header -> [Column] -> MiniFrame
-    , fromCSV                   -- String -> IO MiniFrame
+    , sample                    -- -> Miniframe
+    , fromNull                  -- -> Miniframe
+    , fromRows                  -- Name -> Header -> [Row] -> Miniframe
+    , fromColumns               -- Name -> Header -> [Column] -> Miniframe
+    , fromCSV                   -- String -> IO Miniframe
 
     -- Retrieval
-    , name                      -- MiniFrame -> Name
-    , header                    -- MiniFrame -> Header
-    , rows                      -- MiniFrame -> [Row]
-    , columns                   -- MiniFrame -> [Column]
-    , rowByID                   -- MiniFrame -> ID -> Row
-    , columnByName              -- MiniFrame -> Name -> Column
+    , name                      -- Miniframe -> Name
+    , header                    -- Miniframe -> Header
+    , rows                      -- Miniframe -> [Row]
+    , columns                   -- Miniframe -> [Column]
+    , rowByID                   -- Miniframe -> ID -> Row
+    , columnByName              -- Miniframe -> Name -> Column
 
     -- Dimensions
-    , rowsNum                   -- MiniFrame -> Int
-    , columnsNum                -- MiniFrame -> Int
-    , entriesNum                -- MiniFrame -> Int
+    , rowsNum                   -- Miniframe -> Int
+    , columnsNum                -- Miniframe -> Int
+    , entriesNum                -- Miniframe -> Int
 
     -- Modification
-    , renameMF                  -- Name -> MiniFrame -> MiniFrame
-    , appendRow                 -- Row -> MiniFrame -> MiniFrame
-    , prependRow                -- Row -> MiniFrame -> MiniFrame
-    , appendColumn              -- Name -> Column -> MiniFrame -> MiniFrame
-    , prependColumn             -- Name -> Column -> MiniFrame -> MiniFrame
-    , insertRow                 -- ID -> Row -> MiniFrame -> MiniFrame
-    , insertColumn              -- Name -> Name -> Column -> MiniFrame -> MiniFrame
-    , removeRowByID             -- MiniFrame -> ID -> MiniFrame
-    , removeColumnByName        -- MiniFrame -> Name -> MiniFrame
+    , renameMf                  -- Name -> Miniframe -> Miniframe
+    , appendRow                 -- Row -> Miniframe -> Miniframe
+    , prependRow                -- Row -> Miniframe -> Miniframe
+    , appendColumn              -- Name -> Column -> Miniframe -> Miniframe
+    , prependColumn             -- Name -> Column -> Miniframe -> Miniframe
+    , insertRow                 -- ID -> Row -> Miniframe -> Miniframe
+    , insertColumn              -- Name -> Name -> Column -> Miniframe -> Miniframe
+    , removeRowByID             -- Miniframe -> ID -> Miniframe
+    , removeColumnByName        -- Miniframe -> Name -> Miniframe
 
     -- Relational algebra
-    , union                     -- MiniFrame -> MiniFrame -> MiniFrame
-    , (\\)                      -- MiniFrame -> MiniFrame -> MiniFrame
-    , intersect                 -- MiniFrame -> MiniFrame -> MiniFrame
-    , project                   -- [Name] -> MiniFrame -> MiniFrame
-    , select                    -- (Header -> Row -> Bool) -> MiniFrame -> MiniFrame
-    , rename                    -- Name -> Name -> MiniFrame -> MiniFrame
-    , njoin                     -- MiniFrame -> MiniFrame -> MiniFrame
-    , thetaJoin                 -- (Header -> Row -> Bool) -> MiniFrame -> MiniFrame -> MiniFrame
-    , cartprod                  -- MiniFrame -> MiniFrame -> MiniFrame
+    , union                     -- Miniframe -> Miniframe -> Miniframe
+    , (\\)                      -- Miniframe -> Miniframe -> Miniframe
+    , intersect                 -- Miniframe -> Miniframe -> Miniframe
+    , project                   -- [Name] -> Miniframe -> Miniframe
+    , select                    -- (Header -> Row -> Bool) -> Miniframe -> Miniframe
+    , rename                    -- Name -> Name -> Miniframe -> Miniframe
+    , njoin                     -- Miniframe -> Miniframe -> Miniframe
+    , thetaJoin                 -- (Header -> Row -> Bool) -> Miniframe -> Miniframe -> Miniframe
+    , cartprod                  -- Miniframe -> Miniframe -> Miniframe
 
     -- Pretty-printing
-    , printName                 -- MiniFrame -> IO ()
-    , printHeader               -- MiniFrame -> IO ()
-    , printRows                 -- MiniFrame -> IO ()
-    , printMF                   -- MiniFrame -> IO ()
+    , printName                 -- Miniframe -> IO ()
+    , printHeader               -- Miniframe -> IO ()
+    , printRows                 -- Miniframe -> IO ()
+    , printMf                   -- Miniframe -> IO ()
     ) where
 
 import Data.List.Split
@@ -103,19 +109,19 @@ type Header = [String]
 type Row    = [String]
 type Column = [String]
 
-data MiniFrame = MiniFrame
-    { _name   :: Name           -- Name of the MiniFrame
-    , _header :: Header         -- Header columns of the MiniFrame
-    , _rows   :: [Row] }        -- Rows of the MiniFrame
+data Miniframe = Miniframe
+    { _name   :: Name           -- Name of the Miniframe
+    , _header :: Header         -- Header columns of the Miniframe
+    , _rows   :: [Row] }        -- Rows of the Miniframe
     deriving (Eq, Show)
 
 -------------------------------------------------------------------------------
 
--- | A sample MiniFrame
-sample :: MiniFrame
-sample = MiniFrame name header rows
+-- | A sample Miniframe
+sample :: Miniframe
+sample = Miniframe name header rows
     where
-        name   = "MiniFrame"
+        name   = "Miniframe"
         header = ["C1","C2","C3","C4"]
         rows   = [["R1-C1","R1-C2","R1-C3","R1-C4"],
                   ["R2-C1","R2-C2","R2-C3","R2-C4"],
@@ -130,66 +136,70 @@ sample = MiniFrame name header rows
 -- Construction
 -------------------------------------------------------------------------------
 
--- | Built an empty MiniFrame (probably useless)
-fromNull :: MiniFrame
-fromNull = MiniFrame "" [] []
+-- | Built an empty Miniframe (probably useless)
+fromNull :: Miniframe
+fromNull = Miniframe "" [] []
 
--- | Build a MiniFrame from rows
-fromRows :: Name -> Header -> [Row] -> MiniFrame
-fromRows = MiniFrame
+-- | Build a Miniframe from rows
+fromRows :: Name -> Header -> [Row] -> Miniframe
+fromRows name header rows
+    | List.nub header == header = error "Duplicate header names"
+    | otherwise                 = Miniframe name header rows
 
--- | Build a MiniFrame from columns
-fromColumns :: Name -> Header -> [Column] -> MiniFrame
-fromColumns name header columns = MiniFrame name header (List.transpose columns)
+-- | Build a Miniframe from columns
+fromColumns :: Name -> Header -> [Column] -> Miniframe
+fromColumns name header columns
+    | List.nub header == header = error "Duplicate header names"
+    | otherwise                 = Miniframe name header (List.transpose columns)
 
--- | Build a MiniFrame from the CSV file
-fromCSV :: String -> IO MiniFrame
-fromCSV file
+-- | Build a Miniframe from the CSV file
+fromCSV :: String -> IO Miniframe
+fromCSV filename
   | format /= ".csv" = error "Unknown file format!"
-  | otherwise        = do csvData <- readCSV file
+  | otherwise        = do csvData <- readCSV filename
                           let header = head csvData
                           let rows   = tail csvData
-                          return (MiniFrame "MiniFrame" header rows)
+                          return (Miniframe "Miniframe" header rows)
     where
-        format = map Char.toLower $ drop (length file - 4) file
+        format = map Char.toLower $ drop (length filename - 4) filename
 
 -------------------------------------------------------------------------------
 -- Retrieval
 -------------------------------------------------------------------------------
 
 -- | Get the name
-name :: MiniFrame -> Name
-name (MiniFrame name _ _ ) = name
+name :: Miniframe -> Name
+name (Miniframe name _ _ ) = name
 
 -- | Get the header
-header :: MiniFrame -> Header
-header (MiniFrame _ header _ ) = header
+header :: Miniframe -> Header
+header (Miniframe _ header _ ) = header
 
 -- | Get the rows
-rows :: MiniFrame -> [Row]
-rows (MiniFrame _ _ rows ) = rows
+rows :: Miniframe -> [Row]
+rows (Miniframe _ _ rows ) = rows
 
 -- | Get the columns
-columns :: MiniFrame -> [Column]
-columns (MiniFrame _ _ rows) = List.transpose rows
+columns :: Miniframe -> [Column]
+columns (Miniframe _ _ rows) = List.transpose rows
 
 -- | Get the first entry
-hd :: MiniFrame -> Row
-hd (MiniFrame _ _ rows) = head rows
+hd :: Miniframe -> Row
+hd (Miniframe _ _ rows) = head rows
 
 -- | Get the last entry
-tl :: MiniFrame -> Row
-tl (MiniFrame _ _ rows) = last rows
+tl :: Miniframe -> Row
+tl (Miniframe _ _ rows) = last rows
 
 -- | Get a row by ID
-rowByID :: MiniFrame -> ID -> Row
-rowByID (MiniFrame _ _ rows) id
+rowByID :: Miniframe -> ID -> Row
+rowByID (Miniframe _ _ rows) id
     | id < 0 || id >= length rows = error "Index out of bounds"
     | otherwise                   = rows !! id
 
 -- | Get a column by name
-columnByName :: MiniFrame -> Name -> Column
-columnByName (MiniFrame _ header rows) columnName
+columnByName :: Miniframe -> Name -> Column
+columnByName (Miniframe _ header rows) columnName
     | columnName `elem` header = List.transpose rows !! index
     | otherwise                = error "Unknown column name"
     where
@@ -200,80 +210,90 @@ columnByName (MiniFrame _ header rows) columnName
 -------------------------------------------------------------------------------
 
 -- | Get the number of rows
-rowsNum :: MiniFrame -> Int
-rowsNum (MiniFrame _ _ rows) = length rows
+rowsNum :: Miniframe -> Int
+rowsNum (Miniframe _ _ rows) = length rows
 
 -- | Get the number of columns
-columnsNum :: MiniFrame -> Int
-columnsNum (MiniFrame _ _ rows) = length (List.transpose rows)
+columnsNum :: Miniframe -> Int
+columnsNum (Miniframe _ _ rows) = length (List.transpose rows)
 
 -- | Get the number of entries
-entriesNum :: MiniFrame -> Int
+entriesNum :: Miniframe -> Int
 entriesNum mf = rowsNum mf * columnsNum mf
 
 -------------------------------------------------------------------------------
 -- Addition
 -------------------------------------------------------------------------------
 
--- | Rename the MiniFrame
-renameMF :: Name -> MiniFrame -> MiniFrame
-renameMF newName (MiniFrame name header rows) = MiniFrame newName header rows
+-- | Rename the Miniframe
+renameMf :: Name -> Miniframe -> Miniframe
+renameMf newName (Miniframe name header rows) = Miniframe newName header rows
 
--- | Add a row to the end of the MiniFrame
-appendRow :: Row -> MiniFrame -> MiniFrame
-appendRow newRow (MiniFrame name header rows) = MiniFrame name header (rows ++ [newRow])
+-- | Add a row to the end of the Miniframe
+appendRow :: Row -> Miniframe -> Miniframe
+appendRow newRow (Miniframe name header rows)
+    | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
+    | otherwise                                              = Miniframe name header (rows ++ [newRow])
 
--- | Add a row to the beginning of the MiniFrame
-prependRow :: Row -> MiniFrame -> MiniFrame
-prependRow newRow (MiniFrame name header rows) = MiniFrame name header (newRow : rows)
+-- | Add a row to the beginning of the Miniframe
+prependRow :: Row -> Miniframe -> Miniframe
+prependRow newRow (Miniframe name header rows)
+    | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
+    | otherwise                                              = Miniframe name header (newRow : rows)
 
--- | Add a column to the end of the MiniFrame
-appendColumn :: Name -> Column -> MiniFrame -> MiniFrame
-appendColumn newColumnName newColumn (MiniFrame name header rows) = MiniFrame name newHeader newRows
+-- | Add a column to the end of the Miniframe
+appendColumn :: Name -> Column -> Miniframe -> Miniframe
+appendColumn newColumnName newColumn (Miniframe name header rows)
+    | not (null rows) && length newColumn /= length rows = error "Incompatible column size"
+    | otherwise                                          = Miniframe name newHeader newRows
     where
         newHeader = header ++ [newColumnName]
         newRows   = List.transpose (List.transpose rows ++ [newColumn])
 
--- | Add a column to the beginning of the MiniFrame
-prependColumn :: Name -> Column -> MiniFrame -> MiniFrame
-prependColumn newColumnName newColumn (MiniFrame name header rows) = MiniFrame name newHeader newRows
+-- | Add a column to the beginning of the Miniframe
+prependColumn :: Name -> Column -> Miniframe -> Miniframe
+prependColumn newColumnName newColumn (Miniframe name header rows)
+    | not (null rows) && length newColumn /= length rows = error "Incompatible column size"
+    | otherwise                                          = Miniframe name newHeader newRows
     where
         newHeader = header ++ [newColumnName]
         newRows   = List.transpose (newColumn : List.transpose rows)
 
 -- | Insert a row at the given ID
-insertRow :: ID -> Row -> MiniFrame -> MiniFrame
-insertRow id newRow (MiniFrame name header rows) = MiniFrame name header newRows
+insertRow :: ID -> Row -> Miniframe -> Miniframe
+insertRow id newRow (Miniframe name header rows)
+    | not (null rows) && length newRow /= length (head rows) = error "Incompatible column size"
+    | otherwise = Miniframe name header newRows
     where
         splitID = splitAt id rows
         newRows = fst splitID ++ [newRow] ++ snd splitID
 
 -- | Insert a column at the given index (index starts from 0)
-insertColumn :: ID -> Name -> Row -> MiniFrame -> MiniFrame
-insertColumn index newColumnName newColumn (MiniFrame name header rows)
-    | length newColumn /= length rows = error "Wrong column size!"
-    | otherwise = MiniFrame name newHeader newRows
+insertColumn :: ID -> Name -> Row -> Miniframe -> Miniframe
+insertColumn index newColumnName newColumn (Miniframe name header rows)
+    | length newColumn /= length rows = error "Incompatible column size"
+    | otherwise = Miniframe name newHeader newRows
         where
-            splitIndex  = splitAt index (List.transpose rows)
-            newRows     = List.transpose (fst splitIndex ++ [newColumn] ++ snd splitIndex)
-            splitHIndex = splitAt index header
-            newHeader   = fst splitHIndex ++ [newColumnName] ++ snd splitHIndex
+            splitI    = splitAt index (List.transpose rows)
+            newRows   = List.transpose (fst splitI ++ [newColumn] ++ snd splitI)
+            splitH    = splitAt index header
+            newHeader = fst splitH ++ [newColumnName] ++ snd splitH
 
 -------------------------------------------------------------------------------
 -- Removal
 -------------------------------------------------------------------------------
 
 -- | Remove a row by ID
-removeRowByID :: MiniFrame -> ID -> MiniFrame
-removeRowByID miniframe@(MiniFrame name header rows) id
-    | id < 0 || id >= length rows = miniframe
-    | otherwise                   = MiniFrame name header (take id rows ++ drop (id + 1) rows)
+removeRowByID :: Miniframe -> ID -> Miniframe
+removeRowByID mf@(Miniframe name header rows) id
+    | id < 0 || id >= length rows = mf
+    | otherwise                   = Miniframe name header (take id rows ++ drop (id + 1) rows)
 
 -- | Remove a column by name
-removeColumnByName :: MiniFrame -> Name -> MiniFrame
-removeColumnByName miniframe@(MiniFrame name header rows) columnName
-    | columnName `elem` header = MiniFrame name newHeader newRows
-    | otherwise                = miniframe
+removeColumnByName :: Miniframe -> Name -> Miniframe
+removeColumnByName mf@(Miniframe name header rows) columnName
+    | columnName `elem` header = Miniframe name newHeader newRows
+    | otherwise                = mf
     where
         newHeader = List.delete columnName header
         index     = Maybe.fromJust (List.elemIndex columnName header)
@@ -292,30 +312,30 @@ removeColumnByName miniframe@(MiniFrame name header rows) columnName
 -------------------------------------------------------------------------------
 
 -- | Union operation from relational algebra
-union :: MiniFrame -> MiniFrame -> MiniFrame
-union (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows)
+union :: Miniframe -> Miniframe -> Miniframe
+union (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
     | header /= otherHeader = error "Header mismatch"
-    | otherwise             = MiniFrame newName newHeader newRows
+    | otherwise             = Miniframe newName newHeader newRows
     where
         newName   = name ++ " union " ++ otherName
         newHeader = header
         newRows   = rows `List.union` otherRows
 
 -- | Difference operation from relational algebra
-(\\) :: MiniFrame -> MiniFrame -> MiniFrame
-(\\) (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows)
+(\\) :: Miniframe -> Miniframe -> Miniframe
+(\\) (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
     | header /= otherHeader = error "Header mismatch"
-    | otherwise             = MiniFrame newName newHeader newRows
+    | otherwise             = Miniframe newName newHeader newRows
     where
         newName   = name ++ " difference " ++ otherName
         newHeader = header
         newRows   = rows List.\\ otherRows
 
 -- | Intersect operation from relational algebra
-intersect :: MiniFrame -> MiniFrame -> MiniFrame
-intersect (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows)
+intersect :: Miniframe -> Miniframe -> Miniframe
+intersect (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
     | header /= otherHeader = error "Header mismatch"
-    | otherwise             = MiniFrame newName newHeader newRows
+    | otherwise             = Miniframe newName newHeader newRows
     where
         newName   = name ++ " intersect " ++ otherName
         newHeader = header
@@ -326,9 +346,9 @@ intersect (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRow
 -- the order does not play any role in determining the output.
 
 -- | Project operation from relational algebra
-project :: [Name] -> MiniFrame -> MiniFrame
-project columnNames miniframe@(MiniFrame name header rows)
-    | columnNames `List.isSubsequenceOf` header = MiniFrame newName newHeader newRows
+project :: [Name] -> Miniframe -> Miniframe
+project columnNames miniframe@(Miniframe name header rows)
+    | columnNames `List.isSubsequenceOf` header = Miniframe newName newHeader newRows
     | otherwise                                 = error "Header mismatch: put the columns in the right order!"
     where
         newName   = "Projected " ++ name
@@ -336,13 +356,13 @@ project columnNames miniframe@(MiniFrame name header rows)
         newRows   = List.transpose (map (columnByName miniframe) columnNames)
 
 -- | Select operation from relational algebra
-select :: (Header -> Row -> Bool) -> MiniFrame -> MiniFrame
-select function (MiniFrame name header rows) = MiniFrame ("Selected " ++ name) header (filter (function header) rows)
+select :: (Header -> Row -> Bool) -> Miniframe -> Miniframe
+select function (Miniframe name header rows) = Miniframe ("Selected " ++ name) header (filter (function header) rows)
 
 -- | Rename operation from relational algebra
-rename :: Name -> Name -> MiniFrame -> MiniFrame
-rename oldColumnName newColumnName miniframe@(MiniFrame name header rows)
-    | oldColumnName `elem` header = MiniFrame newName newHeader newRows
+rename :: Name -> Name -> Miniframe -> Miniframe
+rename oldColumnName newColumnName miniframe@(Miniframe name header rows)
+    | oldColumnName `elem` header = Miniframe newName newHeader newRows
     | otherwise                   = miniframe
     where
         index     = Maybe.fromJust (List.elemIndex oldColumnName header)
@@ -354,11 +374,11 @@ rename oldColumnName newColumnName miniframe@(MiniFrame name header rows)
 -- The following is a proto version that needs to be tested
 
 -- | Natural join operation from relational algebra
-njoin :: MiniFrame -> MiniFrame -> MiniFrame
-njoin miniframe@(MiniFrame name header rows) otherMiniframe@(MiniFrame otherName otherHeader otherRows)
+njoin :: Miniframe -> Miniframe -> Miniframe
+njoin miniframe@(Miniframe name header rows) otherMiniframe@(Miniframe otherName otherHeader otherRows)
     | null commonColumnNames  = error "No common column names"
     | columns                 /= otherColumns = error "No common columns"
-    | otherwise               = MiniFrame newName newHeader newRows
+    | otherwise               = Miniframe newName newHeader newRows
     where
         commonColumnNames = header `List.intersect` otherHeader
         columns           = map (columnByName miniframe) commonColumnNames
@@ -369,14 +389,14 @@ njoin miniframe@(MiniFrame name header rows) otherMiniframe@(MiniFrame otherName
         newRows           = List.nub (rows ++ otherRows)
 
 -- | Theta join operation from relational algebra
-thetaJoin :: (Header -> Row -> Bool) -> MiniFrame -> MiniFrame -> MiniFrame
+thetaJoin :: (Header -> Row -> Bool) -> Miniframe -> Miniframe -> Miniframe
 thetaJoin function miniframe otherMiniframe = select function (njoin miniframe otherMiniframe)
 
 -- | Cartesian product operation from relational algebra
-cartprod :: MiniFrame -> MiniFrame -> MiniFrame
-cartprod (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows)
+cartprod :: Miniframe -> Miniframe -> Miniframe
+cartprod (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
     | header List.\\ otherHeader /= header = error "Cannot perform cartesian product on duplicate column names"
-    | otherwise                            = MiniFrame newName newHeader newRows
+    | otherwise                            = Miniframe newName newHeader newRows
     where
         newName   = name ++ " cartprod " ++ otherName
         newHeader = header ++ otherHeader
@@ -387,35 +407,35 @@ cartprod (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRows
 --
 -- Currently, there are four printing tools provided with this package.
 --
---         printName: Prints the name of the MiniFrame
---         printName: Prints the header of the MiniFrame
---         printRows: Prints the rows of the MiniFrame
---         printMF:   Pretty-prints the MiniFrame
+--         printName: Prints the name of the Miniframe
+--         printName: Prints the header of the Miniframe
+--         printRows: Prints the rows of the Miniframe
+--         printMf:   Pretty-prints the Miniframe
 --
 -- 'project' and 'pretty-print' could be used in conjunction to display
--- chunks of the MiniFrame, however, it would be a lot more convenient
+-- chunks of the Miniframe, however, it would be a lot more convenient
 -- to have separate implementations for such printing.
 --
 -- Another idea is to have two functions 'show' and 'prettyPrint'.
--- The first one would be the string representation of the MiniFrame
+-- The first one would be the string representation of the Miniframe
 -- with the latter one being the IO.
 -------------------------------------------------------------------------------
 
 -- | Print the name of the table
-printName :: MiniFrame -> IO ()
-printName (MiniFrame name _ _) = print name
+printName :: Miniframe -> IO ()
+printName (Miniframe name _ _) = print name
 
 -- | Print the header of the table
-printHeader :: MiniFrame -> IO ()
-printHeader (MiniFrame _ header _) = print header
+printHeader :: Miniframe -> IO ()
+printHeader (Miniframe _ header _) = print header
 
 -- | Print the rows of the table
-printRows :: MiniFrame -> IO ()
-printRows (MiniFrame _ _ rows) = mapM_ print rows
+printRows :: Miniframe -> IO ()
+printRows (Miniframe _ _ rows) = mapM_ print rows
 
 -- | Print the table
-printMF :: MiniFrame -> IO ()
-printMF (MiniFrame name header rows) = do
+printMf :: Miniframe -> IO ()
+printMf (Miniframe name header rows) = do
     coloredPutStrLn (" " ++ replicate (length name + 2) '_' ++ "\n| " ++ name ++ " |\n " ++ replicate (length name + 2) '-' ++ "\n")
     coloredPutStrLn (List.intercalate "-+-" formattedDashes)
     coloredPutStrLn (List.intercalate " | " formattedHeader)

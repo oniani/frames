@@ -11,7 +11,7 @@ import Control.Monad        (unless)
 import Data.List            (transpose, elemIndex)
 import Data.Maybe           (fromJust)
 import Test.QuickCheck.Test (quickCheckResult, isSuccess)
-import MiniFrame
+import Miniframe
 
 -------------------------------------------------------------------------------
 -- STUPID TESTS FOR CHECKING. THESE HAVE TO BE REWRITTEN.
