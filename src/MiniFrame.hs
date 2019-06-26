@@ -82,6 +82,7 @@ module MiniFrame
 import Data.List.Split
 
 import ParseCSV
+import Colors
 
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
@@ -131,13 +132,13 @@ fromColumns name header columns = MiniFrame name header (List.transpose columns)
 -- | Build a MiniFrame from the CSV file
 fromCSV :: String -> IO MiniFrame
 fromCSV file
-  | format /= "csv" = error "Unknown file format!"
-  | otherwise       = do csvData <- readCSV file
-                         let header = head csvData
-                         let rows   = tail csvData
-                         return (MiniFrame "MiniFrame" header rows)
+  | format /= ".csv" = error "Unknown file format!"
+  | otherwise        = do csvData <- readCSV file
+                          let header = head csvData
+                          let rows   = tail csvData
+                          return (MiniFrame "MiniFrame" header rows)
     where
-        format = map Char.toLower $ drop (length file - 3) file
+        format = map Char.toLower $ drop (length file - 4) file
 
 -------------------------------------------------------------------------------
 -- Retrieval
@@ -237,8 +238,8 @@ insertColumn index newColumnName newColumn (MiniFrame name header rows)
 -- | Remove a row by ID
 removeRowByID :: MiniFrame -> ID -> MiniFrame
 removeRowByID miniframe@(MiniFrame name header rows) id
-    | id < 0 || id > length rows - 1 = miniframe
-    | otherwise                      = MiniFrame name header (take id rows ++ drop (id + 1) rows)
+    | id < 0 || id >= length rows = miniframe
+    | otherwise                   = MiniFrame name header (take id rows ++ drop (id + 1) rows)
 
 -- | Remove a column by name
 removeColumnByName :: MiniFrame -> Name -> MiniFrame
@@ -300,7 +301,7 @@ intersect (MiniFrame name header rows) (MiniFrame otherName otherHeader otherRow
 project :: [Name] -> MiniFrame -> MiniFrame
 project columnNames miniframe@(MiniFrame name header rows)
     | columnNames `List.isSubsequenceOf` header = MiniFrame newName newHeader newRows
-    | otherwise                                 = error "Header mismatch - put the columns in the right order!"
+    | otherwise                                 = error "Header mismatch: put the columns in the right order!"
     where
         newName   = "Projected " ++ name
         newHeader = columnNames
@@ -387,12 +388,12 @@ printRows (MiniFrame _ _ rows) = mapM_ print rows
 -- | Print the table
 printMF :: MiniFrame -> IO ()
 printMF (MiniFrame name header rows) = do
-    putStrLn (" " ++ replicate (length name + 2) '_' ++ "\n| " ++ name ++ " |\n " ++ replicate (length name + 2) '-' ++ "\n")
-    putStrLn (List.intercalate "-+-" formattedDashes)
-    putStrLn (List.intercalate " | " formattedHeader)
-    putStrLn (List.intercalate "-+-" formattedDashes)
-    mapM_ (putStrLn . List.intercalate " | ") rowsForPrettyPrint
-    putStrLn (List.intercalate "-+-" formattedDashes)
+    coloredPutStrLn (" " ++ replicate (length name + 2) '_' ++ "\n| " ++ name ++ " |\n " ++ replicate (length name + 2) '-' ++ "\n")
+    coloredPutStrLn (List.intercalate "-+-" formattedDashes)
+    coloredPutStrLn (List.intercalate " | " formattedHeader)
+    coloredPutStrLn (List.intercalate "-+-" formattedDashes)
+    mapM_ (coloredPutStrLn . List.intercalate " | ") rowsForPrettyPrint
+    coloredPutStrLn (List.intercalate "-+-" formattedDashes)
     where
         -- Header stuff
         newHeader                 = "| ID" : header
