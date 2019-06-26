@@ -31,9 +31,17 @@ You can read more about relational algebra by following the link:
 ------------------------------------------------------------------------------
 
 module MiniFrame
-    ( sample                    -- -> MiniFrame
+    (
+    -- Data types
+      MiniFrame (..)
+    , Name
+    , Header
+    , Row
+    , Column
 
     -- Construction
+    , sample                    -- -> MiniFrame
+    , fromNull                  -- -> MiniFrame
     , fromRows                  -- Name -> Header -> [Row] -> MiniFrame
     , fromColumns               -- Name -> Header -> [Column] -> MiniFrame
     , fromCSV                   -- String -> IO MiniFrame
@@ -55,7 +63,8 @@ module MiniFrame
     , renameMF                  -- Name -> MiniFrame -> MiniFrame
     , appendRow                 -- Row -> MiniFrame -> MiniFrame
     , prependRow                -- Row -> MiniFrame -> MiniFrame
-    , addColumn                 -- Name -> Column -> MiniFrame -> MiniFrame
+    , appendColumn              -- Name -> Column -> MiniFrame -> MiniFrame
+    , prependColumn             -- Name -> Column -> MiniFrame -> MiniFrame
     , insertRow                 -- ID -> Row -> MiniFrame -> MiniFrame
     , insertColumn              -- Name -> Name -> Column -> MiniFrame -> MiniFrame
     , removeRowByID             -- MiniFrame -> ID -> MiniFrame
@@ -121,11 +130,15 @@ sample = MiniFrame name header rows
 -- Construction
 -------------------------------------------------------------------------------
 
--- | Build a table from rows
+-- | Built an empty MiniFrame (probably useless)
+fromNull :: MiniFrame
+fromNull = MiniFrame "" [] []
+
+-- | Build a MiniFrame from rows
 fromRows :: Name -> Header -> [Row] -> MiniFrame
 fromRows = MiniFrame
 
--- | Build a table from columns
+-- | Build a MiniFrame from columns
 fromColumns :: Name -> Header -> [Column] -> MiniFrame
 fromColumns name header columns = MiniFrame name header (List.transpose columns)
 
@@ -156,21 +169,29 @@ header (MiniFrame _ header _ ) = header
 rows :: MiniFrame -> [Row]
 rows (MiniFrame _ _ rows ) = rows
 
--- | Get all the columns
+-- | Get the columns
 columns :: MiniFrame -> [Column]
 columns (MiniFrame _ _ rows) = List.transpose rows
+
+-- | Get the first entry
+hd :: MiniFrame -> Row
+hd (MiniFrame _ _ rows) = head rows
+
+-- | Get the last entry
+tl :: MiniFrame -> Row
+tl (MiniFrame _ _ rows) = last rows
 
 -- | Get a row by ID
 rowByID :: MiniFrame -> ID -> Row
 rowByID (MiniFrame _ _ rows) id
     | id < 0 || id >= length rows = error "Index out of bounds"
-    | otherwise = rows !! id
+    | otherwise                   = rows !! id
 
 -- | Get a column by name
 columnByName :: MiniFrame -> Name -> Column
 columnByName (MiniFrame _ header rows) columnName
     | columnName `elem` header = List.transpose rows !! index
-    | otherwise                = []
+    | otherwise                = error "Unknown column name"
     where
         index = Maybe.fromJust (List.elemIndex columnName header)
 
@@ -207,11 +228,18 @@ prependRow :: Row -> MiniFrame -> MiniFrame
 prependRow newRow (MiniFrame name header rows) = MiniFrame name header (newRow : rows)
 
 -- | Add a column to the end of the MiniFrame
-addColumn :: Name -> Column -> MiniFrame -> MiniFrame
-addColumn newColumnName newColumn (MiniFrame name header rows) = MiniFrame name newHeader newRows
+appendColumn :: Name -> Column -> MiniFrame -> MiniFrame
+appendColumn newColumnName newColumn (MiniFrame name header rows) = MiniFrame name newHeader newRows
     where
         newHeader = header ++ [newColumnName]
         newRows   = List.transpose (List.transpose rows ++ [newColumn])
+
+-- | Add a column to the beginning of the MiniFrame
+prependColumn :: Name -> Column -> MiniFrame -> MiniFrame
+prependColumn newColumnName newColumn (MiniFrame name header rows) = MiniFrame name newHeader newRows
+    where
+        newHeader = header ++ [newColumnName]
+        newRows   = List.transpose (newColumn : List.transpose rows)
 
 -- | Insert a row at the given ID
 insertRow :: ID -> Row -> MiniFrame -> MiniFrame
