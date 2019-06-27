@@ -93,9 +93,8 @@ module Miniframe
     ) where
 
 import Data.List.Split
-import Text.PrettyPrint.Boxes (printBox, hsep, left, vcat, text)
 import ParseCSV
-import Colors
+import PrettyPrint
 
 import qualified Data.List  as List
 import qualified Data.Maybe as Maybe
@@ -254,7 +253,7 @@ prependColumn newColumnName newColumn (Miniframe name header rows)
     | not (null rows) && length newColumn /= length rows = error "Incompatible column size"
     | otherwise                                          = Miniframe name newHeader newRows
     where
-        newHeader = header ++ [newColumnName]
+        newHeader = newColumnName : header
         newRows   = List.transpose (newColumn : List.transpose rows)
 
 -- | Insert a row at the given ID
@@ -425,49 +424,17 @@ printName (Miniframe name _ _) = coloredPutStrLn name
 
 -- | Print the header of the Miniframe
 printHeader :: Miniframe -> IO ()
-printHeader (Miniframe _ header _) = coloredPutStrLn $ concatMap (++"  ") (init header) ++ last header
+printHeader (Miniframe _ header _) = prettyPrint1D header
 
 -- | Print the rows of the Miniframe
 printRows :: Miniframe -> IO ()
-printRows (Miniframe _ _ rows) = coloredPrintBox $ hsep 2 left (map (vcat left . map text) (List.transpose rows))
+printRows (Miniframe _ _ rows) = prettyPrint2D rows
 
 -- | Print the miniframe
 printMf :: Miniframe -> IO ()
 printMf (Miniframe name header rows) = do
-    coloredPutStrLn $ name ++ "\n"
-    coloredPrintBox $ hsep 2 left (map (vcat left . map text) (List.transpose (header : rows)))
-
-{-
-This is an ugly function that did the work...
-I stumbled upon the Boxes package now, so I do not need to use this mess.
-
--- | Print the table
-printMf :: Miniframe -> IO ()
-printMf (Miniframe name header rows) = do
-    coloredPutStrLn (" " ++ replicate (length name + 2) '_' ++ "\n| " ++ name ++ " |\n " ++ replicate (length name + 2) '-' ++ "\n")
-    coloredPutStrLn (List.intercalate "-+-" formattedDashes)
-    coloredPutStrLn (List.intercalate " | " formattedHeader)
-    coloredPutStrLn (List.intercalate "-+-" formattedDashes)
-    mapM_ (coloredPutStrLn . List.intercalate " | ") rowsForPrettyPrint
-    coloredPutStrLn (List.intercalate "-+-" formattedDashes)
+    coloredPutStrLn (name ++ "\n")
+    prettyPrint2D   (newHeader : newRows)
     where
-        -- Header stuff
-        newHeader                 = "| ID" : header
-        headerLengthList          = map length newHeader
-        -- Rows with ID numbers
-        rowsWithID                = [("| "++ show i) : rows !! i | i <- [0..length rows - 1]]
-        -- Longest strings per column
-        maxLengthStringsPerColumn = map (maximum . map length) (List.transpose rowsWithID)
-        -- Comparing maximum string lengths across the header and columns for even spacing
-        maxNumOfSpaces            = zipWith max headerLengthList maxLengthStringsPerColumn
-        -- Dashes without pluses; we add 3 X columnsNum as `intercalate " | "` puts 3 characters, namely ' ', '|', and ' '
-        formattedDashesHelper1    = [fst i ++ replicate (snd i - length (fst i)) '-' | i <- zip (map ((`replicate` '-') . length) newHeader) maxNumOfSpaces]
-        formattedDashesHelper2    = init formattedDashesHelper1 ++ [last formattedDashesHelper1 ++ "-+"]
-        formattedDashes           = ("+" ++ tail (head formattedDashesHelper2)) : tail formattedDashesHelper2
-        -- Formatted header
-        formattedHeaderHelper     = [fst i ++ replicate (snd i - length (fst i)) ' ' | i <- zip newHeader maxNumOfSpaces]
-        formattedHeader           = init formattedHeaderHelper ++ [last formattedHeaderHelper ++ " |"]
-        -- Formatted rows
-        rowsForPrettyPrintHelper  = List.transpose [map (\n -> n ++ replicate (snd i - length n) ' ') (fst i) | i <- zip (List.transpose rowsWithID) maxNumOfSpaces]
-        rowsForPrettyPrint        = List.transpose (init (List.transpose rowsForPrettyPrintHelper) ++ [map (++" |") (last (List.transpose rowsForPrettyPrintHelper))])
--}
+        newHeader = "ID" : header
+        newRows   = [uncurry (:) p | p <- zip (map show [0..length rows - 1]) rows]
