@@ -1,5 +1,5 @@
 {-
-This is a test file for the MiniFrame.hs module.
+This is a test file for the Miniframe.hs module.
 Run 'cabal test' for running the tests.
 -}
 
@@ -18,17 +18,17 @@ import Miniframe
 -------------------------------------------------------------------------------
 
 prop_fromNull :: Bool
-prop_fromNull = fromNull == MiniFrame "" [] []
+prop_fromNull = fromNull == Miniframe "" [] []
 
 prop_fromRows :: Name -> Header -> [Row] -> Bool
 prop_fromRows tname theader trows = mf == fromRows tname theader trows
     where
-        mf = MiniFrame tname theader trows
+        mf = Miniframe tname theader trows
 
 prop_fromColumns :: Name -> Header -> [Column] -> Bool
 prop_fromColumns tname theader tcolumns = mf == fromColumns tname theader tcolumns
     where
-        mf = MiniFrame tname theader (transpose tcolumns)
+        mf = Miniframe tname theader (transpose tcolumns)
 
 -------------------------------------------------------------------------------
 

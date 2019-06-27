@@ -1,8 +1,8 @@
 cabal-version:         2.2
 name:                  miniframe
-category:              Data manipulation
-version:               0
-license:               GNU General Public License v3.0
+category:              Data
+version:               1.0
+license:               GPL-3.0-only
 license-file:          LICENSE.md
 author:                David Oniani
 maintainer:            David Oniani <davidoniani@gmail.com>
@@ -10,17 +10,14 @@ stability:             experimental
 homepage:              http://github.com/oniani/miniframe/
 bug-reports:           http://github.com/oniani/miniframe/issues
 copyright:             Copyright (C) 2018 David Oniani
-synopsis:              Minimal data frames with relational algebra.
-description:           Manipulation of small datasets in the tabular format.
+synopsis:              Minimal data frames with relational algebra
+description:           Manipulation of small datasets in the tabular format
 build-type:            Simple
-extra-source-files:    README.md
+extra-source-files:    README.md, ChangeLog.md
 
 library
-  exposed-modules:     MiniFrame, ParseCSV, Colors
-  build-depends:       base,
-                       split,
-                       parsec,
-                       ansi-terminal
+  exposed-modules:     Miniframe, ParseCSV, PrettyPrint, Relational
+  build-depends:       base, parsec, ansi-terminal, boxes
   hs-source-dirs:      src
   default-language:    Haskell2010
 
@@ -30,6 +27,4 @@ test-suite spec
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
-  build-depends:       base,
-                       miniframe,
-                       QuickCheck
+  build-depends:       base, miniframe, QuickCheck

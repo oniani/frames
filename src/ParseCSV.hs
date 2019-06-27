@@ -1,6 +1,17 @@
--- This CSV reader is the extended version of
--- that taken from the book Real World Haskell.
--- Link: http://book.realworldhaskell.org/read/using-parsec.html
+{- |
+Module      :  ParseCSV.hs
+Description :  Parsing CSV files
+Copyright   :  (c) David Oniani
+License     :  GNU General Public License v3.0
+
+Maintainer  :  onianidavid@gmail.com
+Stability   :  experimental
+Portability :  portable
+
+This CSV reader is the extended version of that taken from the
+book Real World Haskell.
+    Link: http://book.realworldhaskell.org/read/using-parsec.html
+-}
 
 module ParseCSV
     (readCSV)

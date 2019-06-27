@@ -1,3 +1,16 @@
+{- |
+Module      :  PrettyPrint.hs
+Description :  Pretty-printing functions for tabular 2D data frames
+Copyright   :  (c) David Oniani
+License     :  GNU General Public License v3.0
+
+Maintainer  :  onianidavid@gmail.com
+Stability   :  experimental
+Portability :  portable
+
+An implementation of a data frame which comes with various handy operations.
+-}
+
 module PrettyPrint
     ( coloredPutStrLn
     , prettyPrint1D
