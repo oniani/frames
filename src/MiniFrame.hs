@@ -25,12 +25,10 @@ Description:
 ------------------------------------------------------------------------------
 --
 -- TODO:
---     * addRow function should throw an error if the number of items in
---       the row does not match the number of items in the Miniframe row.
+--
+--     * Implement relational algebra operations
 --
 --     * Handle all the edge cases (might require a heavy use of Data.Maybe)
---
---     * Implement relational algebra operators
 --
 --     * Optimize functions
 --
@@ -99,9 +97,9 @@ import Data.List.Split
 import ParseCSV
 import Colors
 
-import qualified Data.List as List
+import qualified Data.List  as List
 import qualified Data.Maybe as Maybe
-import qualified Data.Char as Char
+import qualified Data.Char  as Char
 
 type ID     = Int
 type Name   = String
@@ -262,7 +260,7 @@ prependColumn newColumnName newColumn (Miniframe name header rows)
 -- | Insert a row at the given ID
 insertRow :: ID -> Row -> Miniframe -> Miniframe
 insertRow id newRow (Miniframe name header rows)
-    | not (null rows) && length newRow /= length (head rows) = error "Incompatible column size"
+    | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
     | otherwise = Miniframe name header newRows
     where
         splitID = splitAt id rows
