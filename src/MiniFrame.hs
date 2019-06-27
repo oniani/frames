@@ -93,7 +93,7 @@ module Miniframe
     ) where
 
 import Data.List.Split
-
+import Text.PrettyPrint.Boxes (printBox, hsep, left, vcat, text)
 import ParseCSV
 import Colors
 
@@ -419,17 +419,27 @@ cartprod (Miniframe name header rows) (Miniframe otherName otherHeader otherRows
 -- with the latter one being the IO.
 -------------------------------------------------------------------------------
 
--- | Print the name of the table
+-- | Print the name of the Miniframe
 printName :: Miniframe -> IO ()
-printName (Miniframe name _ _) = print name
+printName (Miniframe name _ _) = coloredPutStrLn name
 
--- | Print the header of the table
+-- | Print the header of the Miniframe
 printHeader :: Miniframe -> IO ()
-printHeader (Miniframe _ header _) = print header
+printHeader (Miniframe _ header _) = coloredPutStrLn $ concatMap (++"  ") (init header) ++ last header
 
--- | Print the rows of the table
+-- | Print the rows of the Miniframe
 printRows :: Miniframe -> IO ()
-printRows (Miniframe _ _ rows) = mapM_ print rows
+printRows (Miniframe _ _ rows) = coloredPrintBox $ hsep 2 left (map (vcat left . map text) (List.transpose rows))
+
+-- | Print the miniframe
+printMf :: Miniframe -> IO ()
+printMf (Miniframe name header rows) = do
+    coloredPutStrLn $ name ++ "\n"
+    coloredPrintBox $ hsep 2 left (map (vcat left . map text) (List.transpose (header : rows)))
+
+{-
+This is an ugly function that did the work...
+I stumbled upon the Boxes package now, so I do not need to use this mess.
 
 -- | Print the table
 printMf :: Miniframe -> IO ()
@@ -460,3 +470,4 @@ printMf (Miniframe name header rows) = do
         -- Formatted rows
         rowsForPrettyPrintHelper  = List.transpose [map (\n -> n ++ replicate (snd i - length n) ' ') (fst i) | i <- zip (List.transpose rowsWithID) maxNumOfSpaces]
         rowsForPrettyPrint        = List.transpose (init (List.transpose rowsForPrettyPrintHelper) ++ [map (++" |") (last (List.transpose rowsForPrettyPrintHelper))])
+-}
