@@ -8,7 +8,7 @@ Maintainer  :  onianidavid@gmail.com
 Stability   :  experimental
 Portability :  portable
 
-An implementation of a data frame which comes with various handy operations.
+A module for pretty-printing.
 -}
 
 module PrettyPrint
@@ -17,16 +17,9 @@ module PrettyPrint
     , prettyPrint2D
     ) where
 
+import Data.List              (transpose)
 import System.Console.ANSI
-import Text.PrettyPrint.Boxes
-import Data.List
-
--- | A function to get the colored output from putStr command
-coloredPutStr :: String -> IO ()
-coloredPutStr str = do
-    setSGR [SetColor Foreground Dull Green]
-    putStr str
-    setSGR []
+import Text.PrettyPrint.Boxes (Box, printBox, hsep, left, vcat, text)
 
 -- | A function to get the colored output from putStrLn command
 coloredPutStrLn :: String -> IO ()

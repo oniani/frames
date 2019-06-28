@@ -1,6 +1,6 @@
-# MiniFrames
+# Miniframe
 
-Minimal data frames in Haskell.
+Minimal data frames with relational algebra
 
 ## License
 

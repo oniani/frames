@@ -28,9 +28,9 @@ eol =   try (string "\n\r")
 
 quotedChar = noneOf "\"" <|> try (string "\"\"" >> return '"')
 
-quotedCell = do char '"'
+quotedCell = do _ <- char '"'
                 content <- many quotedChar
-                char '"' <?> "quote at end of cell"
+                _ <- char '"' <?> "quote at end of cell"
                 return content
 
 cell    = quotedCell <|> many (noneOf ",\n\r")

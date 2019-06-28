@@ -117,13 +117,13 @@ fromColumns name header columns
 -- | Build from the CSV file
 fromCSV :: String -> IO Miniframe
 fromCSV filename
-  | format /= ".csv" = error "Unknown file format"
-  | otherwise        = do csvData <- readCSV filename
-                          let header = head csvData
-                          let rows   = tail csvData
-                          return (Miniframe "Miniframe" header rows)
-    where
-      format = map toLower $ drop (length filename - 4) filename
+    | format /= ".csv" = error "Unknown file format"
+    | otherwise        = do csvData <- readCSV filename
+                            let header = head csvData
+                            let rows   = tail csvData
+                            return (Miniframe "Miniframe" header rows)
+      where
+        format = map toLower $ drop (length filename - 4) filename
 
 -------------------------------------------------------------------------------
 -- Retrieval
