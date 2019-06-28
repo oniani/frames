@@ -13,7 +13,7 @@ Some relational algebra goodness on top of minimal data frames.
 
 module Relational
     ( union      -- Miniframe -> Miniframe -> Miniframe
-    , (\\)       -- Miniframe -> Miniframe -> Miniframe
+    , diff       -- Miniframe -> Miniframe -> Miniframe
     , intersect  -- Miniframe -> Miniframe -> Miniframe
     , project    -- [Name] -> Miniframe -> Miniframe
     , select     -- (Header -> Row -> Bool) -> Miniframe -> Miniframe
@@ -45,17 +45,17 @@ union (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
     | header /= otherHeader = error "Header mismatch"
     | otherwise             = Miniframe newName newHeader newRows
     where
-        newName   = name ++ " union " ++ otherName
+        newName   = "Union: " ++ name ++ " and " ++ otherName
         newHeader = header
         newRows   = rows `List.union` otherRows
 
 -- | Difference operation from relational algebra
-(\\) :: Miniframe -> Miniframe -> Miniframe
-(\\) (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
+diff :: Miniframe -> Miniframe -> Miniframe
+diff (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
     | header /= otherHeader = error "Header mismatch"
     | otherwise             = Miniframe newName newHeader newRows
     where
-        newName   = name ++ " difference " ++ otherName
+        newName   = "Difference: " ++ name ++ " and " ++ otherName
         newHeader = header
         newRows   = rows List.\\ otherRows
 
@@ -65,7 +65,7 @@ intersect (Miniframe name header rows) (Miniframe otherName otherHeader otherRow
     | header /= otherHeader = error "Header mismatch"
     | otherwise             = Miniframe newName newHeader newRows
     where
-        newName   = name ++ " intersect " ++ otherName
+        newName   = "Intersection: " ++ name ++ " and " ++ otherName
         newHeader = header
         newRows   = rows `List.intersect` otherRows
 
@@ -97,7 +97,6 @@ rename oldColumnName newColumnName miniframe@(Miniframe name header rows)
         newName   = name
         newHeader = take index header ++ [newColumnName] ++ drop (index + 1) header
         newRows   = rows
-
 
 -- The following is a proto version that needs to be tested
 
