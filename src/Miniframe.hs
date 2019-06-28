@@ -32,8 +32,8 @@ module Miniframe
     , headerOf                  -- Miniframe -> Header
     , rowsOf                    -- Miniframe -> [Row]
     , columnsOf                 -- Miniframe -> [Column]
-    , rowByID                   -- Miniframe -> ID -> Row
-    , columnByName              -- Miniframe -> Name -> Column
+    , rowByID                   -- ID -> Miniframe -> Row
+    , columnByName              -- Name -> Miniframe -> Column
 
     -- Dimensions
     , rowsNum                   -- Miniframe -> Int
@@ -42,19 +42,24 @@ module Miniframe
 
     -- Modification
     , renameMf                  -- Name -> Miniframe -> Miniframe
-    , appendRow                 -- Row -> Miniframe -> Miniframe
     , prependRow                -- Row -> Miniframe -> Miniframe
-    , appendColumn              -- Name -> Column -> Miniframe -> Miniframe
-    , prependColumn             -- Name -> Column -> Miniframe -> Miniframe
+    , appendRow                 -- Row -> Miniframe -> Miniframe
     , insertRow                 -- ID -> Row -> Miniframe -> Miniframe
+    , prependColumn             -- Name -> Column -> Miniframe -> Miniframe
+    , appendColumn              -- Name -> Column -> Miniframe -> Miniframe
     , insertColumn              -- Name -> Name -> Column -> Miniframe -> Miniframe
-    , removeRowByID             -- Miniframe -> ID -> Miniframe
-    , removeColumnByName        -- Miniframe -> Name -> Miniframe
+
+    -- Removal
+    , removeRowByID             -- ID -> Miniframe -> Miniframe
+    , removeColumnByName        -- Name -> Miniframe -> Miniframe
 
     -- Pretty-printing
     , printName                 -- Miniframe -> IO ()
     , printHeader               -- Miniframe -> IO ()
+    , printRow                  -- ID -> Miniframe -> IO ()
     , printRows                 -- Miniframe -> IO ()
+    -- , printColumn               -- Name -> Miniframe -> IO ()
+    -- , printColumns              -- Miniframe -> IO ()
     , printMf                   -- Miniframe -> IO ()
     ) where
 
@@ -154,14 +159,14 @@ tailOf :: Miniframe -> Row
 tailOf (Miniframe _ _ rows) = last rows
 
 -- | Get a row by ID
-rowByID :: Miniframe -> ID -> Row
-rowByID (Miniframe _ _ rows) i
+rowByID :: ID -> Miniframe -> Row
+rowByID i (Miniframe _ _ rows)
     | i < 0 || i >= length rows = error "Index out of bounds"
     | otherwise                 = rows !! i
 
 -- | Get a column by name
-columnByName :: Miniframe -> Name -> Column
-columnByName (Miniframe _ header rows) columnName
+columnByName :: Name -> Miniframe -> Column
+columnByName columnName (Miniframe _ header rows)
     | columnName `notElem` header = error "Unknown column name"
     | otherwise                   = List.transpose rows !! index
       where
@@ -191,35 +196,18 @@ entriesNum mf = rowsNum mf * columnsNum mf
 renameMf :: Name -> Miniframe -> Miniframe
 renameMf newName (Miniframe _ header rows) = Miniframe newName header rows
 
--- | Add a row to the end
-appendRow :: Row -> Miniframe -> Miniframe
-appendRow newRow (Miniframe name header rows)
-    | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
-    | otherwise                                              = Miniframe name header (rows ++ [newRow])
-
 -- | Add a row to the beginning
 prependRow :: Row -> Miniframe -> Miniframe
 prependRow newRow (Miniframe name header rows)
     | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
     | otherwise                                              = Miniframe name header (newRow : rows)
 
--- | Add a column to the end
-appendColumn :: Name -> Column -> Miniframe -> Miniframe
-appendColumn newColumnName newColumn (Miniframe name header rows)
-    | not (null rows) && length newColumn /= length rows = error "Incompatible column size"
-    | otherwise                                          = Miniframe name newHeader newRows
-      where
-        newHeader = header ++ [newColumnName]
-        newRows   = List.transpose (List.transpose rows ++ [newColumn])
+-- | Add a row to the end
+appendRow :: Row -> Miniframe -> Miniframe
+appendRow newRow (Miniframe name header rows)
+    | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
+    | otherwise                                              = Miniframe name header (rows ++ [newRow])
 
--- | Add a column to the beginning
-prependColumn :: Name -> Column -> Miniframe -> Miniframe
-prependColumn newColumnName newColumn (Miniframe name header rows)
-    | not (null rows) && length newColumn /= length rows = error "Incompatible column size"
-    | otherwise                                          = Miniframe name newHeader newRows
-      where
-        newHeader = newColumnName : header
-        newRows   = List.transpose (newColumn : List.transpose rows)
 
 -- | Insert a row at the given ID
 insertRow :: ID -> Row -> Miniframe -> Miniframe
@@ -230,8 +218,26 @@ insertRow i newRow (Miniframe name header rows)
         splitID = splitAt i rows
         newRows = fst splitID ++ [newRow] ++ snd splitID
 
+-- | Add a column to the beginning
+prependColumn :: Name -> Column -> Miniframe -> Miniframe
+prependColumn newColumnName newColumn (Miniframe name header rows)
+    | not (null rows) && length newColumn /= length rows = error "Incompatible column size"
+    | otherwise                                          = Miniframe name newHeader newRows
+      where
+        newHeader = newColumnName : header
+        newRows   = List.transpose (newColumn : List.transpose rows)
+
+-- | Add a column to the end
+appendColumn :: Name -> Column -> Miniframe -> Miniframe
+appendColumn newColumnName newColumn (Miniframe name header rows)
+    | not (null rows) && length newColumn /= length rows = error "Incompatible column size"
+    | otherwise                                          = Miniframe name newHeader newRows
+      where
+        newHeader = header ++ [newColumnName]
+        newRows   = List.transpose (List.transpose rows ++ [newColumn])
+
 -- | Insert a column at the given index (index starts from 0)
-insertColumn :: ID -> Name -> Row -> Miniframe -> Miniframe
+insertColumn :: ID -> Name -> Column -> Miniframe -> Miniframe
 insertColumn index newColumnName newColumn (Miniframe name header rows)
     | length newColumn /= length rows = error "Incompatible column size"
     | otherwise = Miniframe name newHeader newRows
@@ -246,14 +252,14 @@ insertColumn index newColumnName newColumn (Miniframe name header rows)
 -------------------------------------------------------------------------------
 
 -- | Remove a row by ID
-removeRowByID :: Miniframe -> ID -> Miniframe
-removeRowByID mf@(Miniframe name header rows) i
+removeRowByID :: ID -> Miniframe -> Miniframe
+removeRowByID i mf@(Miniframe name header rows)
     | i < 0 || i >= length rows = mf
     | otherwise                 = Miniframe name header (take i rows ++ drop (i + 1) rows)
 
 -- | Remove a column by name
-removeColumnByName :: Miniframe -> Name -> Miniframe
-removeColumnByName mf@(Miniframe name header rows) columnName
+removeColumnByName :: Name -> Miniframe -> Miniframe
+removeColumnByName columnName mf@(Miniframe name header rows)
     | columnName `elem` header = Miniframe name newHeader newRows
     | otherwise                = mf
     where
@@ -262,20 +268,24 @@ removeColumnByName mf@(Miniframe name header rows) columnName
       newRows   = List.transpose $ take index (List.transpose rows) ++ drop (index + 1) (List.transpose rows)
 
 -------------------------------------------------------------------------------
--- Printing and Pretty-printing
+-- Pretty-printing
 -------------------------------------------------------------------------------
 
 -- | Print the name
 printName :: Miniframe -> IO ()
-printName (Miniframe name _ _) = coloredPutStrLn name
+printName mf = coloredPutStrLn $ nameOf mf
 
 -- | Print the header
 printHeader :: Miniframe -> IO ()
-printHeader (Miniframe _ header _) = prettyPrint1D header
+printHeader mf = prettyPrint1D $ headerOf mf
+
+-- | Print the row by id
+printRow :: ID -> Miniframe -> IO ()
+printRow  i mf = prettyPrint2D [rowByID i mf]
 
 -- | Print the rows
 printRows :: Miniframe -> IO ()
-printRows (Miniframe _ _ rows) = prettyPrint2D rows
+printRows mf = prettyPrint2D $ rowsOf mf
 
 -- | Print the miniframe
 printMf :: Miniframe -> IO ()
