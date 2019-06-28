@@ -28,10 +28,10 @@ module Miniframe
     , fromCSV                   -- String -> IO Miniframe
 
     -- Retrieval
-    , name                      -- Miniframe -> Name
-    , header                    -- Miniframe -> Header
-    , rows                      -- Miniframe -> [Row]
-    , columns                   -- Miniframe -> [Column]
+    , nameOf                    -- Miniframe -> Name
+    , headerOf                  -- Miniframe -> Header
+    , rowsOf                    -- Miniframe -> [Row]
+    , columnsOf                 -- Miniframe -> [Column]
     , rowByID                   -- Miniframe -> ID -> Row
     , columnByName              -- Miniframe -> Name -> Column
 
@@ -112,7 +112,7 @@ fromRows name header rows
 fromColumns :: Name -> Header -> [Column] -> Miniframe
 fromColumns name header columns
     | List.nub header /= header = error "Duplicate header names"
-    | otherwise                 = Miniframe name header (List.transpose columns)
+    | otherwise                 = Miniframe name header $ List.transpose columns
 
 -- | Build from the CSV file
 fromCSV :: String -> IO Miniframe
@@ -130,42 +130,42 @@ fromCSV filename
 -------------------------------------------------------------------------------
 
 -- | Get the name
-name :: Miniframe -> Name
-name (Miniframe name _ _ ) = name
+nameOf :: Miniframe -> Name
+nameOf (Miniframe name _ _ ) = name
 
 -- | Get the header
-header :: Miniframe -> Header
-header (Miniframe _ header _ ) = header
+headerOf :: Miniframe -> Header
+headerOf (Miniframe _ header _ ) = header
 
 -- | Get the rows
-rows :: Miniframe -> [Row]
-rows (Miniframe _ _ rows ) = rows
+rowsOf :: Miniframe -> [Row]
+rowsOf (Miniframe _ _ rows ) = rows
 
 -- | Get the columns
-columns :: Miniframe -> [Column]
-columns (Miniframe _ _ rows) = List.transpose rows
+columnsOf :: Miniframe -> [Column]
+columnsOf (Miniframe _ _ rows) = List.transpose rows
 
 -- | Get the first entry
-hd :: Miniframe -> Row
-hd (Miniframe _ _ rows) = head rows
+headOf :: Miniframe -> Row
+headOf (Miniframe _ _ rows) = head rows
 
 -- | Get the last entry
-tl :: Miniframe -> Row
-tl (Miniframe _ _ rows) = last rows
+tailOf :: Miniframe -> Row
+tailOf (Miniframe _ _ rows) = last rows
 
 -- | Get a row by ID
 rowByID :: Miniframe -> ID -> Row
-rowByID (Miniframe _ _ rows) id
-    | id < 0 || id >= length rows = error "Index out of bounds"
-    | otherwise                   = rows !! id
+rowByID (Miniframe _ _ rows) i
+    | i < 0 || i >= length rows = error "Index out of bounds"
+    | otherwise                 = rows !! i
 
 -- | Get a column by name
 columnByName :: Miniframe -> Name -> Column
 columnByName (Miniframe _ header rows) columnName
-    | columnName `elem` header = List.transpose rows !! index
-    | otherwise                = error "Unknown column name"
+    | columnName `notElem` header = error "Unknown column name"
+    | otherwise                   = List.transpose rows !! index
       where
-        index = Maybe.fromJust (List.elemIndex columnName header)
+        index = Maybe.fromJust $ List.elemIndex columnName header
 
 -------------------------------------------------------------------------------
 -- Dimensions
@@ -177,7 +177,7 @@ rowsNum (Miniframe _ _ rows) = length rows
 
 -- | Get the number of columns
 columnsNum :: Miniframe -> Int
-columnsNum (Miniframe _ _ rows) = length (List.transpose rows)
+columnsNum (Miniframe _ _ rows) = length $ List.transpose rows
 
 -- | Get the number of entries
 entriesNum :: Miniframe -> Int
@@ -189,7 +189,7 @@ entriesNum mf = rowsNum mf * columnsNum mf
 
 -- | Rename the miniframe
 renameMf :: Name -> Miniframe -> Miniframe
-renameMf newName (Miniframe name header rows) = Miniframe newName header rows
+renameMf newName (Miniframe _ header rows) = Miniframe newName header rows
 
 -- | Add a row to the end
 appendRow :: Row -> Miniframe -> Miniframe
@@ -223,11 +223,11 @@ prependColumn newColumnName newColumn (Miniframe name header rows)
 
 -- | Insert a row at the given ID
 insertRow :: ID -> Row -> Miniframe -> Miniframe
-insertRow id newRow (Miniframe name header rows)
+insertRow i newRow (Miniframe name header rows)
     | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
     | otherwise = Miniframe name header newRows
       where
-        splitID = splitAt id rows
+        splitID = splitAt i rows
         newRows = fst splitID ++ [newRow] ++ snd splitID
 
 -- | Insert a column at the given index (index starts from 0)
@@ -236,8 +236,8 @@ insertColumn index newColumnName newColumn (Miniframe name header rows)
     | length newColumn /= length rows = error "Incompatible column size"
     | otherwise = Miniframe name newHeader newRows
       where
-        splitI    = splitAt index (List.transpose rows)
-        newRows   = List.transpose (fst splitI ++ [newColumn] ++ snd splitI)
+        splitI    = splitAt index $ List.transpose rows
+        newRows   = List.transpose $ fst splitI ++ [newColumn] ++ snd splitI
         splitH    = splitAt index header
         newHeader = fst splitH ++ [newColumnName] ++ snd splitH
 
@@ -247,9 +247,9 @@ insertColumn index newColumnName newColumn (Miniframe name header rows)
 
 -- | Remove a row by ID
 removeRowByID :: Miniframe -> ID -> Miniframe
-removeRowByID mf@(Miniframe name header rows) id
-    | id < 0 || id >= length rows = mf
-    | otherwise                   = Miniframe name header (take id rows ++ drop (id + 1) rows)
+removeRowByID mf@(Miniframe name header rows) i
+    | i < 0 || i >= length rows = mf
+    | otherwise                 = Miniframe name header (take i rows ++ drop (i + 1) rows)
 
 -- | Remove a column by name
 removeColumnByName :: Miniframe -> Name -> Miniframe
@@ -258,8 +258,8 @@ removeColumnByName mf@(Miniframe name header rows) columnName
     | otherwise                = mf
     where
       newHeader = List.delete columnName header
-      index     = Maybe.fromJust (List.elemIndex columnName header)
-      newRows   = List.transpose (take index (List.transpose rows) ++ drop (index + 1) (List.transpose rows))
+      index     = Maybe.fromJust $ List.elemIndex columnName header
+      newRows   = List.transpose $ take index (List.transpose rows) ++ drop (index + 1) (List.transpose rows)
 
 -------------------------------------------------------------------------------
 -- Printing and Pretty-printing
@@ -280,8 +280,8 @@ printRows (Miniframe _ _ rows) = prettyPrint2D rows
 -- | Print the miniframe
 printMf :: Miniframe -> IO ()
 printMf (Miniframe name header rows) = do
-    coloredPutStrLn (name ++ "\n")
-    prettyPrint2D   (newHeader : newRows)
+    coloredPutStrLn $ name ++ "\n"
+    prettyPrint2D   $ newHeader : newRows
     where
       newHeader = "ID" : header
       newRows   = [uncurry (:) p | p <- zip (map show [0..length rows - 1]) rows]
