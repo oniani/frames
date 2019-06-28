@@ -5,7 +5,7 @@ version:               1.0
 license:               GPL-3.0-only
 license-file:          LICENSE.md
 author:                David Oniani
-maintainer:            David Oniani <davidoniani@gmail.com>
+maintainer:            David Oniani <onianidavid@gmail.com>
 stability:             experimental
 homepage:              http://github.com/oniani/miniframe/
 bug-reports:           http://github.com/oniani/miniframe/issues
