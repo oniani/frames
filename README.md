@@ -2,20 +2,33 @@
 
 Miniframe provides a simple and user-friendly interface for working
 with datasets in a tabular format. The idea of a miniframe comes from
-R's Data Frame object. Miniframe is just a very stripped down version
-of R's data frames. It provides just enough power and flexibility to
-conveniently explore the data. The function names as well as their
-functionalities are so simple that even those who are not familiar
-with Haskell can easily use this package for their convenience.
+programming language R's `data.frame` object. Miniframe is just a very
+stripped down version of R's data frames. It provides just enough power
+and flexibility to conveniently explore the data. The function names as
+well as their functionalities are so simple that even those who are not
+familiar with Haskell can easily use this package for their convenience.
 
-For the sake of simplicity, everything in a miniframe has to be of the
-type `String` (the same of `[Char]`). Yet, this does not make interacting
+For the sake of simplicity, everything in a miniframe is of the type
+`String` (the same as `[Char]`). Yet, this does not make interacting
 with miniframes very inconvenient, nor does it limit its flexibility.
 A separate section in the documentation will be dedicated to this issue.
 Miniframe heavily utilizes Haskell's `List` data type meaning that
 everything within miniframes including the fundamental data types can
 be manipulated directly using built-in list functions such as `map`,
 `concatMap`, `foldl`, `foldr`, `scanl`, `scanr`, and so forth.
+
+## Documentation
+
+- [Data types](#data-types)
+- [Construction](#construction)
+- [Accessing the data](#accessing-the-data)
+- [Counting the dimensions](#counting-the-dimensions)
+- [Modifications](#modifications)
+- [Removal](#removal)
+- [Type conversion and numeric computation](#type-conversion-and-numeric-computation)
+- [Pretty-printing](#pretty-printing)
+- [Additional operations](#additional-operations)
+- [Leveraging Haskell's built-in goodness](#leveraging-haskells-built-in-goodness)
 
 ## Data types
 
@@ -35,6 +48,7 @@ there are auxiliary types, which are defined as follows:
 
 ```haskell
 type ID     = Int
+type Index  = Int
 type Name   = String
 type Header = [String]
 type Row    = [String]
@@ -47,26 +61,20 @@ the lists of the type `[String]`. These facts make it super simple
 to navigate through and manipulate the dataset as well as to perform
 numeric computations.
 
-## Documentation
-
-- [Construction](#construction)
-- [Accessing the data](#accessing-the-data)
-- [Counting the dimensions](#counting-the-dimensions)
-- [Modifications](#modifications)
-- [Removal](#removal)
-- [Type conversion and numeric computation](#type-conversion-and-numeric-computation)
-- [Pretty-printing](#pretty-printing)
-- [Leveraging Haskell's built-in goodness](#leveraging-haskell's-built-in-goodness)
-
 ### Construction
 
 | Function      | Description               | Signature                                 |
 | ------------- | ------------------------- | ----------------------------------------- |
-| `sample`      | construct out of a sample | `Miniframe`                               |
+| `fromSample`  | construct out of a sample | `Miniframe`                               |
 | `fromNull`    | construct out of nothing  | `Miniframe`                               |
 | `fromRows`    | construct out of rows     | `Name -> Header -> [Row] -> Miniframe`    |
 | `fromColumns` | construct out of columns  | `Name -> Header -> [Column] -> Miniframe` |
 | `fromCSV`     | construct out of CSV file | `String -> IO Miniframe`                  |
+
+NOTE: Do not let names `fromSample` and `fromNull` deceive you. The only thing
+these two functions do is construction a miniframe from a sample name, header,
+and rows and from nothing (resulting in an empty miniframe). For consistency,
+all these functions have a prefix `from`.
 
 Example usage:
 
@@ -76,50 +84,43 @@ import Miniframe
 main :: IO ()
 main = do
     -- A sample miniframe
-    putStrLn "Sample miniframe\n"
-    printMf sample
+    printMf fromSample
 
     -- A null miniframe
-    putStrLn "\nNull miniframe\n"
     printMf fromNull
 
-    -- Constructing a miniframe from rows...
+    -- Constructing a miniframe from rows
     let rows = [ ["Bianca" , "21", "Apple" ]
                , ["Brian"  , "20", "Orange"]
                , ["Bethany", "19", "Banana"]
                ]
 
-    putStrLn "\nMiniframe from the rows\n"
     printMf $ fromRows "Favorite fruits" ["Name", "Age", "Favorite Fruit"] rows
 
-    -- Constructing a miniframe from columns...
+    -- Constructing a miniframe from columns
     let columns = [ ["Walter", "John", "Eric"]
                   , ["500"   , "700" , "600" ]
                   , ["18"    , "20"  , "19"  ]
                   ]
 
-    putStrLn "\nMiniframe from the columns\n"
     printMf $ fromColumns "Game scores" ["Player", "Score", "Age"] columns
 
-    -- Constructing a miniframe from CSV file...
+    -- Constructing a miniframe from CSV file
     mf <- fromCSV "schools.csv"
 
-    putStrLn "\nMiniframe from the CSV file"
     printMf mf
 ```
 
 ### Accessing the data
 
-| Function       | Description       | Signature                     |
-| -------------- | ----------------- | ----------------------------- |
-| `nameOf`       | get the name      | `Miniframe -> Name`           |
-| `headerOf`     | get the header    | `Miniframe -> Header`         |
-| `rowsOf`       | get the rows      | `Miniframe -> [Row]`          |
-| `columnsOf`    | get the columns   | `Miniframe -> [Column]`       |
-| `headOf`       | get the head      | `Miniframe -> Row`            |
-| `tailOf`       | get the tail      | `Miniframe -> Row`            |
-| `rowByID`      | get the row by id | `ID -> Miniframe -> Row`      |
-| `columnByName` | get the row by id | `Name -> Miniframe -> Column` |
+| Function    | Description     | Signature               |
+| ----------- | --------------- | ----------------------- |
+| `nameOf`    | get the name    | `Miniframe -> Name`     |
+| `headerOf`  | get the header  | `Miniframe -> Header`   |
+| `rowsOf`    | get the rows    | `Miniframe -> [Row]`    |
+| `columnsOf` | get the columns | `Miniframe -> [Column]` |
+| `headOf`    | get the head    | `Miniframe -> Row`      |
+| `tailOf`    | get the tail    | `Miniframe -> [Row]`    |
 
 Example usage:
 
@@ -128,37 +129,12 @@ import Miniframe
 
 main :: IO ()
 main = do
-    -- Get the name
-    putStrLn "Printing out the name...\n"
-    putStrLn $ nameOf sample
-
-    -- Get the header
-    putStrLn "\nPrinting out the header...\n"
-    print $ headerOf sample
-
-    -- Get the rows
-    putStrLn "\nPrinting out the rows...\n"
-    print $ rowsOf sample
-
-    -- Get the columns
-    putStrLn "\nPrinting out the rows...\n"
-    print $ columnsOf sample
-
-    -- Get the first row
-    putStrLn "\nPrinting out the first row...\n"
-    print $ headOf sample
-
-    -- Get the last row
-    putStrLn "\nPrinting out the last row...\n"
-    print $ tailOf sample
-
-    -- Get the row by id
-    putStrLn "\nPrinting out the row by id...\n"
-    print $ rowByID 5 sample
-
-    -- Get the column by name
-    putStrLn "\nPrinting out the column by name...\n"
-    print $ columnByname "C3" sample
+    putStrLn $ nameOf    fromSample  -- Get the name
+    print    $ headerOf  fromSample  -- Get the header
+    print    $ rowsOf    fromSample  -- Get the rows
+    print    $ columnsOf fromSample  -- Get the columns
+    print    $ headOf    fromSample  -- Get the head
+    print    $ tailOf    fromSample  -- Get the tail
 ```
 
 ### Counting the dimensions
@@ -176,30 +152,21 @@ import Miniframe
 
 main :: IO ()
 main = do
-    -- Get the number of rows
-    putStr "Number of rows: "
-    print $ rowsNum sample
-
-    -- Get the number of columns
-    putStr "Number of columns: "
-    print $ columnsNum sample
-
-    -- Get the number of cells
-    putStr "Number of cells: "
-    print $ entriesNum sample
+    print $ rowsNum    fromSample  -- Get the number of rows
+    print $ columnsNum fromSample  -- Get the number of columns
+    print $ entriesNum fromSample  -- Get the number of cells
 ```
 
 ### Modifications
 
-| Function        | Description                         | Signature                                        |
-| --------------- | ----------------------------------- | ------------------------------------------------ |
-| `renameMf`      | rename a miniframe                  | `Name -> Miniframe -> Miniframe`                 |
-| `prependRow`    | add a row to the beginning          | `Row -> Miniframe -> Miniframe`                  |
-| `appendRow`     | add a row to the end                | `Row -> Miniframe -> Miniframe`                  |
-| `prependColumn` | add a column to the beginning       | `Name -> Column -> Miniframe -> Miniframe`       |
-| `appendColumn`  | add a column to the end             | `Name -> Column -> Miniframe -> Miniframe`       |
-| `insertRow`     | add a row by given id               | `ID -> Row -> Miniframe -> Miniframe`            |
-| `insertColumn`  | add a column by given column number | `ID -> Name -> Column -> Miniframe -> Miniframe` |
+| Function        | Description                   | Signature                                           |
+| --------------- | ----------------------------- | --------------------------------------------------- |
+| `prependRow`    | add a row to the beginning    | `Row -> Miniframe -> Miniframe`                     |
+| `prependColumn` | add a column to the beginning | `Name -> Column -> Miniframe -> Miniframe`          |
+| `appendRow`     | add a row to the end          | `Row -> Miniframe -> Miniframe`                     |
+| `appendColumn`  | add a column to the end       | `Name -> Column -> Miniframe -> Miniframe`          |
+| `insertRow`     | add a row by given id         | `ID -> Row -> Miniframe -> Miniframe`               |
+| `insertColumn`  | add a column by given index   | `Index -> Name -> Column -> Miniframe -> Miniframe` |
 
 Example usage:
 
@@ -208,41 +175,26 @@ import Miniframe
 
 main :: IO ()
 main = do
-    -- Renaming a miniframe...
-    putStrLn "Miniframe with the new name\n"
-    printMf $ renameMf "New Name" sample
+    let newRow    = map show [1..4]  -- New row
+    let newColumn = map show [1..8]  -- New column
 
-    -- Prepending a row to a miniframe...
-    putStr "\nMiniframe with the new row at the beginning\n"
-    printMf $ prependRow ["1","2","3","4"] sample
+    printMf $ prependRow           newRow    fromSample  -- Prepending a row
+    printMf $ prependColumn "Nums" newColumn fromSample  -- Prepending a column
 
-    -- Appending a row to a miniframe...
-    putStr "\nMiniframe with the new row at the end\n"
-    printMf $ appendRow ["1","2","3","4"] sample
+    printMf $ appendRow           newRow    fromSample  -- Appending a row
+    printMf $ appendColumn "Nums" newColumn fromSample  -- Appending a column
 
-    -- Inserting a new row to a miniframe...
-    putStr "\nMiniframe with the new row at the given ID\n"
-    printMf $ insertRow 1  ["1","2","3","4"] sample
+    printMf $ insertRow    1        newRow    fromSample  -- Inserting a row
+    printMf $ insertColumn 3 "Nums" newColumn fromSample  -- Inserting a column
 
-    -- Prepending a new column to a miniframe...
-    putStr "\nMiniframe with the new column at the beginning\n"
-    printMf $ prependColumn "Nums" ["1","2","3","4","5","6","7","8"] sample
-
-    -- Appending a new column to a miniframe...
-    putStr "\nMiniframe with the new column at the end\n"
-    printMf $ appendColumn "Nums" ["1","2","3","4","5","6","7","8"] sample
-
-    -- Inserting a new column to a miniframe...
-    putStr "\nMiniframe with the new column at the given index"
-    printMf $ insertColumn 3  "Nums" ["1","2","3","4","5","6","7","8"] sample
 ```
 
 ### Removal
 
-| Function             | Description                 | Signature                        |
-| -------------------- | --------------------------- | -------------------------------- |
-| `removeRowByID`      | remove a row by its id      | `ID -> Miniframe -> Miniframe`   |
-| `removeColumnByName` | remove a column by its name | `Name -> Miniframe -> Miniframe` |
+| Function             | Description             | Signature                        |
+| -------------------- | ----------------------- | -------------------------------- |
+| `removeRowByID`      | remove a row by id      | `ID -> Miniframe -> Miniframe`   |
+| `removeColumnByName` | remove a column by name | `Name -> Miniframe -> Miniframe` |
 
 Example usage:
 
@@ -251,13 +203,8 @@ import Miniframe
 
 main :: IO ()
 main = do
-    -- Removing a row by its id
-    putStrLn "Removing a row by its id...\n"
-    printMf $ removeRowByID 2 sample
-
-    -- Removing a column by its name
-    putStrLn "\nRemoving a column by its name..."
-    printMf $ removeColumnByName "C4" sample
+    printMf $ removeRowByID       2   fromSample  -- Removing a row by id
+    printMf $ removeColumnByName "C4" fromSample  -- Removing a column by name
 ```
 
 ### Type conversion and numeric computation
@@ -289,11 +236,9 @@ main = do
              ]
 
     -- Calculating the total quantity
-    putStr "Total quantity: "
     print $ sum $ toInt $ columnByName "Quantity" mf
 
     -- Calculating the average number of dollars spent per person
-    putStr "Average number of dollars spent per person: "
     print $ sum (toDecimal $ columnByName "Total Spending" mf) / 3
 ```
 
@@ -315,26 +260,33 @@ Example usage:
 import Miniframe
 
 main = do
-    putStrLn "Pretty-printing the name of the miniframe...\n"
-    printName sample
+    printName        fromSample  -- Pretty-printing the name
+    printHeader      fromSample  -- Pretty-printing the header
+    printRow 1       fromSample  -- Pretty-printing the row by id
+    printRows        fromSample  -- Pretty-printing all the rows
+    printColumn "C4" fromSample  -- Pretty-printing the column C4
+    printColumns     fromSample  -- Pretty-printing all the columns
+    printMf          fromSample  -- Pretty-printing the miniframe
+```
 
-    putStrLn "\nPretty-printing the header of the miniframe...\n"
-    printHeader sample
+| Function        | Description             | Signature                        |
+| --------------- | ----------------------- | -------------------------------- |
+| `rowByID`       | get the row by id       | `ID -> Miniframe -> Row`         |
+| `columnByName`  | get the column by name  | `Name -> Miniframe -> Column`    |
+| `columnByIndex` | get the column by index | `Index -> Miniframe -> Column`   |
+| `renameMf`      | rename a miniframe      | `Name -> Miniframe -> Miniframe` |
 
-    putStrLn "\nPretty-printing the row with id 1 of the miniframe...\n"
-    printRow 1 sample
+Example usage:
 
-    putStrLn "\nPretty-printing all rows of the miniframe...\n"
-    printRows sample
+```haskell
+import Miniframe
 
-    putStrLn "\nPretty-printing column C4 of the miniframe...\n"
-    printColumn "C4" sample
-
-    putStrLn "\nPretty-printing all columns of the miniframe...\n"
-    printColumns sample
-
-    putStrLn "\nPretty-printing the miniframe..."
-    printMf sample
+main :: IO ()
+main = do
+    print $ rowByID       5         fromSample  -- Get the row by id
+    print $ columnByname  "C3"      fromSample  -- Get the column by name
+    print $ columnByIndex 1         fromSample  -- Get the column by index
+    print $ renameMf "    New Name" fromSample  -- Rename the miniframe
 ```
 
 ### Leveraging Haskell's built-in goodness
@@ -357,17 +309,18 @@ main = do
              ["Product","Company","Price"]
 
              -- Rows
-             [ ["FP toolkit", "Haskell Enterprises", "1000.00"]
-             , ["OO toolkit", "C++ Enterprises"    , "100.00" ]
-             , ["PP toolkit", "C Enterprises"      , "10.00"  ]
-             , ["LC toolkit", "Prolog Enterprises" , "1.00"   ]
+             [ ["FP toolkit" , "Haskell Enterprises", "1000.00"]
+             , ["OOP toolkit", "C++ Enterprises"    , "100.00" ]
+             , ["PP toolkit" , "C Enterprises"      , "10.00"  ]
+             , ["LP toolkit" , "Prolog Enterprises" , "1.00"   ]
              ]
 
     -- Print out the sum of all prices
+    print $ sum $ map (\x -> read x::Double) $ columnByName "Price" mf
+
     -- Note that for this operation we could use the provided toDecimal
     -- function, but for arbitrary precision decimals, type Double should
     -- be used
-    print $ sum $ map (\x -> read x::Double) $ columnByName "Price" mf
 ```
 
 ## License

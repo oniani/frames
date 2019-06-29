@@ -21,7 +21,7 @@ module Miniframe
     , Column
 
     -- Construction
-    , sample              -- Miniframe
+    , fromSample          -- Miniframe
     , fromNull            -- Miniframe
     , fromRows            -- Name -> Header -> [Row] -> Miniframe
     , fromColumns         -- Name -> Header -> [Column] -> Miniframe
@@ -32,8 +32,8 @@ module Miniframe
     , headerOf            -- Miniframe -> Header
     , rowsOf              -- Miniframe -> [Row]
     , columnsOf           -- Miniframe -> [Column]
-    , rowByID             -- ID -> Miniframe -> Row
-    , columnByName        -- Name -> Miniframe -> Column
+    , headOf              -- Miniframe -> Row
+    , tailOf              -- Miniframe -> [Row]
 
     -- Dimensions
     , rowsNum             -- Miniframe -> Int
@@ -41,12 +41,11 @@ module Miniframe
     , entriesNum          -- Miniframe -> Int
 
     -- Modification
-    , renameMf            -- Name -> Miniframe -> Miniframe
     , prependRow          -- Row -> Miniframe -> Miniframe
-    , appendRow           -- Row -> Miniframe -> Miniframe
-    , insertRow           -- ID -> Row -> Miniframe -> Miniframe
     , prependColumn       -- Name -> Column -> Miniframe -> Miniframe
+    , appendRow           -- Row -> Miniframe -> Miniframe
     , appendColumn        -- Name -> Column -> Miniframe -> Miniframe
+    , insertRow           -- ID -> Row -> Miniframe -> Miniframe
     , insertColumn        -- Name -> Name -> Column -> Miniframe -> Miniframe
 
     -- Removal
@@ -65,6 +64,12 @@ module Miniframe
     , printColumn         -- Name -> Miniframe -> IO ()
     , printColumns        -- Miniframe -> IO ()
     , printMf             -- Miniframe -> IO ()
+
+    -- Additional operations
+    , rowByID             -- ID -> Miniframe -> Row
+    , columnByName        -- Name -> Miniframe -> Column
+    , columnByIndex       -- Index -> Miniframe -> Column
+    , renameMf            -- Name -> Miniframe -> Miniframe
     ) where
 
 import Data.Char (toLower, isDigit)
@@ -75,6 +80,7 @@ import qualified Data.List  as List
 import qualified Data.Maybe as Maybe
 
 type ID     = Int
+type Index  = Int
 type Name   = String
 type Header = [String]
 type Row    = [String]
@@ -89,8 +95,8 @@ data Miniframe = Miniframe
 -------------------------------------------------------------------------------
 
 -- | A sample miniframe
-sample :: Miniframe
-sample = Miniframe name header rows
+fromSample :: Miniframe
+fromSample = Miniframe name header rows
   where
     name   = "Miniframe"
     header = ["C1","C2","C3","C4"]
@@ -159,22 +165,8 @@ headOf :: Miniframe -> Row
 headOf (Miniframe _ _ rows) = head rows
 
 -- | Get the last entry
-tailOf :: Miniframe -> Row
-tailOf (Miniframe _ _ rows) = last rows
-
--- | Get a row by id
-rowByID :: ID -> Miniframe -> Row
-rowByID i (Miniframe _ _ rows)
-    | i < 0 || i >= length rows = error "Index out of bounds"
-    | otherwise                 = rows !! i
-
--- | Get a column by name
-columnByName :: Name -> Miniframe -> Column
-columnByName columnName (Miniframe _ header rows)
-    | columnName `notElem` header = error "Unknown column name"
-    | otherwise                   = List.transpose rows !! index
-      where
-        index = Maybe.fromJust $ List.elemIndex columnName header
+tailOf :: Miniframe -> [Row]
+tailOf (Miniframe _ _ rows) = tail rows
 
 -------------------------------------------------------------------------------
 -- Dimensions
@@ -196,30 +188,11 @@ entriesNum mf = rowsNum mf * columnsNum mf
 -- Addition
 -------------------------------------------------------------------------------
 
--- | Rename the miniframe
-renameMf :: Name -> Miniframe -> Miniframe
-renameMf newName (Miniframe _ header rows) = Miniframe newName header rows
-
 -- | Add a row to the beginning
 prependRow :: Row -> Miniframe -> Miniframe
 prependRow newRow (Miniframe name header rows)
     | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
     | otherwise                                              = Miniframe name header (newRow : rows)
-
--- | Add a row to the end
-appendRow :: Row -> Miniframe -> Miniframe
-appendRow newRow (Miniframe name header rows)
-    | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
-    | otherwise                                              = Miniframe name header (rows ++ [newRow])
-
--- | Insert a row at the given id
-insertRow :: ID -> Row -> Miniframe -> Miniframe
-insertRow i newRow (Miniframe name header rows)
-    | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
-    | otherwise = Miniframe name header newRows
-      where
-        splitID = splitAt i rows
-        newRows = fst splitID ++ [newRow] ++ snd splitID
 
 -- | Add a column to the beginning
 prependColumn :: Name -> Column -> Miniframe -> Miniframe
@@ -230,6 +203,12 @@ prependColumn newColumnName newColumn (Miniframe name header rows)
         newHeader = newColumnName : header
         newRows   = List.transpose (newColumn : List.transpose rows)
 
+-- | Add a row to the end
+appendRow :: Row -> Miniframe -> Miniframe
+appendRow newRow (Miniframe name header rows)
+    | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
+    | otherwise                                              = Miniframe name header (rows ++ [newRow])
+
 -- | Add a column to the end
 appendColumn :: Name -> Column -> Miniframe -> Miniframe
 appendColumn newColumnName newColumn (Miniframe name header rows)
@@ -239,11 +218,20 @@ appendColumn newColumnName newColumn (Miniframe name header rows)
         newHeader = header ++ [newColumnName]
         newRows   = List.transpose (List.transpose rows ++ [newColumn])
 
+-- | Insert a row at the given id
+insertRow :: ID -> Row -> Miniframe -> Miniframe
+insertRow i newRow (Miniframe name header rows)
+    | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
+    | otherwise = Miniframe name header newRows
+      where
+        splitID = splitAt i rows
+        newRows = fst splitID ++ [newRow] ++ snd splitID
+
 -- | Insert a column at the given index (index starts from 0)
-insertColumn :: ID -> Name -> Column -> Miniframe -> Miniframe
+insertColumn :: Index -> Name -> Column -> Miniframe -> Miniframe
 insertColumn index newColumnName newColumn (Miniframe name header rows)
     | length newColumn /= length rows = error "Incompatible column size"
-    | otherwise = Miniframe name newHeader newRows
+    | otherwise                       = Miniframe name newHeader newRows
       where
         splitI    = splitAt index $ List.transpose rows
         newRows   = List.transpose $ fst splitI ++ [newColumn] ++ snd splitI
@@ -322,3 +310,31 @@ printMf (Miniframe name header rows) = do
     where
       newHeader = "ID" : header
       newRows   = [uncurry (:) p | p <- zip (map show [0..length rows - 1]) rows]
+
+-------------------------------------------------------------------------------
+-- Additional operations
+-------------------------------------------------------------------------------
+
+-- | Get a row by id
+rowByID :: ID -> Miniframe -> Row
+rowByID i (Miniframe _ _ rows)
+    | i < 0 || i >= length rows = error "Index out of bounds"
+    | otherwise                 = rows !! i
+
+-- | Get a column by name
+columnByName :: Name -> Miniframe -> Column
+columnByName columnName (Miniframe _ header rows)
+    | columnName `notElem` header = error "Unknown column name"
+    | otherwise                   = List.transpose rows !! index
+      where
+        index = Maybe.fromJust $ List.elemIndex columnName header
+
+-- | Get the column by index
+columnByIndex :: Index -> Miniframe -> Column
+columnByIndex index (Miniframe _ _ rows)
+    | index < 0 || index >= length (List.transpose rows) = error "Index out of bounds"
+    | otherwise                                          = List.transpose rows !! index
+
+-- | Rename the miniframe
+renameMf :: Name -> Miniframe -> Miniframe
+renameMf newName (Miniframe _ header rows) = Miniframe newName header rows
