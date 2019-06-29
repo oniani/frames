@@ -21,8 +21,8 @@ module Miniframe
     , Column
 
     -- Construction
-    , sample              -- -> Miniframe
-    , fromNull            -- -> Miniframe
+    , sample              -- Miniframe
+    , fromNull            -- Miniframe
     , fromRows            -- Name -> Header -> [Row] -> Miniframe
     , fromColumns         -- Name -> Header -> [Column] -> Miniframe
     , fromCSV             -- String -> IO Miniframe
@@ -53,6 +53,10 @@ module Miniframe
     , removeRowByID       -- ID -> Miniframe -> Miniframe
     , removeColumnByName  -- Name -> Miniframe -> Miniframe
 
+    -- Conversion
+    , toInt               -- Column -> [Int]
+    , toDecimal           -- Column -> [Float]
+
     -- Pretty-printing
     , printName           -- Miniframe -> IO ()
     , printHeader         -- Miniframe -> IO ()
@@ -63,7 +67,7 @@ module Miniframe
     , printMf             -- Miniframe -> IO ()
     ) where
 
-import Data.Char (toLower)
+import Data.Char (toLower, isDigit)
 import ParseCSV
 import PrettyPrint
 
@@ -265,6 +269,22 @@ removeColumnByName columnName mf@(Miniframe name header rows)
       newHeader = List.delete columnName header
       index     = Maybe.fromJust $ List.elemIndex columnName header
       newRows   = List.transpose $ take index (List.transpose rows) ++ drop (index + 1) (List.transpose rows)
+
+-------------------------------------------------------------------------------
+-- Conversion
+-------------------------------------------------------------------------------
+
+-- | Convert a column of strings to a column of integers
+toInt :: Column -> [Int]
+toInt xs
+    | all (all isDigit) xs    = map (\x -> read x::Int) xs
+    | otherwise               = error "Non-integer value in the column"
+
+-- | Convert a column of strings to a column of decimals
+toDecimal :: Column -> [Float]
+toDecimal xs
+    | all (all isDigit) $ map (filter (/='.')) xs = map (\x -> read x::Float) xs
+    | otherwise               = error "Non-decimal value in the column"
 
 -------------------------------------------------------------------------------
 -- Pretty-printing

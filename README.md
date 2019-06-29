@@ -54,6 +54,7 @@ numeric computations.
 - [Counting the dimensions](#counting-the-dimensions)
 - [Modifications](#modifications)
 - [Removal](#removal)
+- [Type conversion and numeric computation](#type-conversion-and-numeric-computation)
 - [Pretty-printing](#pretty-printing)
 - [Leveraging Haskell's built-in goodness](#leveraging-haskell's-built-in-goodness)
 
@@ -62,6 +63,7 @@ numeric computations.
 | Function      | Description               | Signature                                 |
 | ------------- | ------------------------- | ----------------------------------------- |
 | `sample`      | construct out of a sample | `Miniframe`                               |
+| `fromNull`    | construct out of nothing  | `Miniframe`                               |
 | `fromRows`    | construct out of rows     | `Name -> Header -> [Row] -> Miniframe`    |
 | `fromColumns` | construct out of columns  | `Name -> Header -> [Column] -> Miniframe` |
 | `fromCSV`     | construct out of CSV file | `String -> IO Miniframe`                  |
@@ -76,6 +78,10 @@ main = do
     -- A sample miniframe
     putStrLn "Sample miniframe\n"
     printMf sample
+
+    -- A null miniframe
+    putStrLn "\nNull miniframe\n"
+    printMf fromNull
 
     -- Constructing a miniframe from rows...
     let rows = [ ["Bianca" , "21", "Apple" ]
@@ -146,8 +152,8 @@ main = do
     putStrLn "\nPrinting out the last row...\n"
     print $ tailOf sample
 
-    -- Get the row by ID
-    putStrLn "\nPrinting out the row by ID...\n"
+    -- Get the row by id
+    putStrLn "\nPrinting out the row by id...\n"
     print $ rowByID 5 sample
 
     -- Get the column by name
@@ -235,7 +241,7 @@ main = do
 
 | Function             | Description                 | Signature                        |
 | -------------------- | --------------------------- | -------------------------------- |
-| `removeRowByID`      | remove a row by its ID      | `ID -> Miniframe -> Miniframe`   |
+| `removeRowByID`      | remove a row by its id      | `ID -> Miniframe -> Miniframe`   |
 | `removeColumnByName` | remove a column by its name | `Name -> Miniframe -> Miniframe` |
 
 Example usage:
@@ -245,13 +251,50 @@ import Miniframe
 
 main :: IO ()
 main = do
-    -- Removing a row by its ID
-    putStrLn "Removing a row by its ID...\n"
+    -- Removing a row by its id
+    putStrLn "Removing a row by its id...\n"
     printMf $ removeRowByID 2 sample
 
     -- Removing a column by its name
     putStrLn "\nRemoving a column by its name..."
     printMf $ removeColumnByName "C4" sample
+```
+
+### Type conversion and numeric computation
+
+| Function    | Description                                        | Signature           |
+| ----------- | -------------------------------------------------- | ------------------- |
+| `toInt`     | Convert a column of string to a column of integers | `Column -> [Int]`   |
+| `toDecimal` | Convert a column of stings to a column of decimals | `Column -> [Float]` |
+
+Example usage:
+
+```haskell
+import Miniframe
+
+main :: IO ()
+main = do
+    let mf = fromColumns
+
+             -- Name
+             "Miniframe"
+
+             -- Header
+             ["Name","Quantity","Total Spending"]
+
+             -- Columns
+             [ ["Paul" , "Ryan", "Kim"  ]
+             , ["10"   , "20"  , "30"   ]
+             , ["100.0", "200" , "300.0"]
+             ]
+
+    -- Calculating the total quantity
+    putStr "Total quantity: "
+    print $ sum $ toInt $ columnByName "Quantity" mf
+
+    -- Calculating the average number of dollars spent per person
+    putStr "Average number of dollars spent per person: "
+    print $ sum (toDecimal $ columnByName "Total Spending" mf) / 3
 ```
 
 ### Pretty-printing
@@ -321,6 +364,9 @@ main = do
              ]
 
     -- Print out the sum of all prices
+    -- Note that for this operation we could use the provided toDecimal
+    -- function, but for arbitrary precision decimals, type Double should
+    -- be used
     print $ sum $ map (\x -> read x::Double) $ columnByName "Price" mf
 ```
 
