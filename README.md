@@ -28,9 +28,9 @@ be manipulated directly using built-in list functions such as `map`,
 - [Type conversion and numeric computation](#type-conversion-and-numeric-computation)
 - [Pretty-printing](#pretty-printing)
 - [Additional operations](#additional-operations)
-- [Leveraging Haskell's built-in goodness](#leveraging-haskells-built-in-goodness)
+- [Leveraging Haskell's built-in goodness](#leveraging-haskell's-built-in-goodness)
 
-## Data types
+### Data types
 
 Miniframe has one fundamental data type, it is called `Miniframe`.
 Its definition is shown below.
@@ -268,6 +268,8 @@ main = do
     printColumns     fromSample  -- Pretty-printing all the columns
     printMf          fromSample  -- Pretty-printing the miniframe
 ```
+
+### Additional operations
 
 | Function        | Description             | Signature                        |
 | --------------- | ----------------------- | -------------------------------- |
