@@ -77,11 +77,11 @@ project columnNames mf@(Miniframe name header rows)
     where
         newName   = "Projected " ++ name
         newHeader = columnNames
-        newRows   = List.transpose $ map (columnByName mf) columnNames
+        newRows   = List.transpose $ map (`columnByName` mf) columnNames
 
--- | Select operation
+-- | Select operation (it does the partial application and then filters the rows with the rest)
 select :: (Header -> Row -> Bool) -> Miniframe -> Miniframe
-select function (Miniframe name header rows) = Miniframe ("Selected " ++ name) header (filter (function header) rows)
+select predicate (Miniframe name header rows) = Miniframe ("Selected: " ++ name) header (filter (predicate header) rows)
 
 -- | Rename operation
 rename :: Name -> Name -> Miniframe -> Miniframe
@@ -104,8 +104,8 @@ njoin mf@(Miniframe name header rows) otherMf@(Miniframe otherName otherHeader o
     | otherwise               = Miniframe newName newHeader newRows
     where
         commonColumnNames = header `List.intersect` otherHeader
-        columns           = map (columnByName mf) commonColumnNames
-        otherColumns      = map (columnByName otherMf) commonColumnNames
+        columns           = map (`columnByName` mf) commonColumnNames
+        otherColumns      = map (`columnByName` otherMf) commonColumnNames
         ----
         newName           = name ++ " njoin " ++ otherName
         newHeader         = List.nub (header ++ otherHeader)

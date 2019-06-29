@@ -39,12 +39,13 @@ functions are available to the user!
 
 ### Constructing a miniframe
 
-| Function      | Description               | Signature                                 |
-|---------------|---------------------------|-------------------------------------------|
-| `sample`      | construct a sample        | `Miniframe`                               |
-| `fromRows`    | construct out of rows     | `Name -> Header -> [Row] -> Miniframe`    |
-| `fromColumns` | construct out of columns  | `Name -> Header -> [Column] -> Miniframe` |
-| `fromCSV`     | construct out of CSV file | `String -> IO Miniframe`                  |
+| Function      | Description                         | Signature                                 |
+| ------------- | ----------------------------------- | ----------------------------------------- |
+| `sample`      | construct out of a sample           | `Miniframe`                               |
+| `Miniframe`   | construct out of data type directly | `Name -> Header -> [Row] -> Miniframe`    |
+| `fromRows`    | construct out of rows               | `Name -> Header -> [Row] -> Miniframe`    |
+| `fromColumns` | construct out of columns            | `Name -> Header -> [Column] -> Miniframe` |
+| `fromCSV`     | construct out of CSV file           | `String -> IO Miniframe`                  |
 
 Example usage:
 
@@ -57,12 +58,16 @@ main = do
     putStrLn "Sample miniframe\n"
     printMf sample
 
-    -- Constructing a miniframe from rows...
+    -- Constructing a miniframe from the data type directly
     let rows = [ ["Bianca" , "21", "Apple" ]
                , ["Brian"  , "20", "Orange"]
                , ["Bethany", "19", "Banana"]
                ]
 
+    putStrLn "\nMiniframe from the data type\n"
+    printMf $ Miniframe "Favorite fruits" ["Name", "Age", "Favorite Fruit"] rows
+
+    -- Constructing a miniframe from rows...
     putStrLn "\nMiniframe from the rows\n"
     printMf $ fromRows "Favorite fruits" ["Name", "Age", "Favorite Fruit"] rows
 
@@ -73,7 +78,7 @@ main = do
                   ]
 
     putStrLn "\nMiniframe from the columns\n"
-    printMf $ fromColumns "Game scores" ["Player", "Score", "Age"] rows
+    printMf $ fromColumns "Game scores" ["Player", "Score", "Age"] columns
 
     -- Constructing a miniframe from CSV file...
     mf <- fromCSV "schools.csv"
@@ -82,11 +87,10 @@ main = do
     printMf mf
 ```
 
-
 ### Getting values out of a miniframe
 
 | Function       | Description       | Signature                     |
-|----------------|-------------------|-------------------------------|
+| -------------- | ----------------- | ----------------------------- |
 | `nameOf`       | get the name      | `Miniframe -> Name`           |
 | `headerOf`     | get the header    | `Miniframe -> Header`         |
 | `rowsOf`       | get the rows      | `Miniframe -> [Row]`          |
@@ -138,11 +142,11 @@ main = do
 
 ### Getting values out of a miniframe
 
-| Function      | Description               | Signature          |
-|---------------|---------------------------|--------------------|
-| `rowsNum`     | get the number of rows    | `Miniframe -> Int` |
-| `columnsNum`  | get the number of columns | `Miniframe -> Int` |
-| `entriesNum`  | get the number of cells   | `Miniframe -> Int` |
+| Function     | Description               | Signature          |
+| ------------ | ------------------------- | ------------------ |
+| `rowsNum`    | get the number of rows    | `Miniframe -> Int` |
+| `columnsNum` | get the number of columns | `Miniframe -> Int` |
+| `entriesNum` | get the number of cells   | `Miniframe -> Int` |
 
 Example usage:
 
@@ -167,7 +171,7 @@ main = do
 ### Adding to a miniframe
 
 | Function        | Description                         | Signature                                        |
-|-----------------|-------------------------------------|--------------------------------------------------|
+| --------------- | ----------------------------------- | ------------------------------------------------ |
 | `renameMf`      | rename a miniframe                  | `Name -> Miniframe -> Miniframe`                 |
 | `prependRow`    | add a row to the beginning          | `Row -> Miniframe -> Miniframe`                  |
 | `appendRow`     | add a row to the end                | `Row -> Miniframe -> Miniframe`                  |
@@ -215,7 +219,7 @@ main = do
 ### Removing from a miniframe
 
 | Function             | Description                 | Signature                        |
-|----------------------|-----------------------------|----------------------------------|
+| -------------------- | --------------------------- | -------------------------------- |
 | `removeRowByID`      | remove a row by its ID      | `ID -> Miniframe -> Miniframe`   |
 | `removeColumnByName` | remove a column by its name | `Name -> Miniframe -> Miniframe` |
 
@@ -235,11 +239,10 @@ main = do
     printMf $ removeColumnByName "C4" sample
 ```
 
-
 ### Pretty-printing a miniframe
 
 | Function       | Description              | Signature                    |
-|----------------|--------------------------|------------------------------|
+| -------------- | ------------------------ | ---------------------------- |
 | `printName`    | print the name           | `Miniframe -> IO ()`         |
 | `printHeader`  | print the header         | `Miniframe -> IO ()`         |
 | `printRow`     | print the row by id      | `ID -> Miniframe -> IO ()`   |
@@ -294,6 +297,7 @@ main = do
              -- Header
              ["Product","Company","Price"]
 
+             -- Rows
              [ ["FP toolkit", "Haskell Enterprises", "1000.00"]
              , ["OO toolkit", "C++ Enterprises"    , "100.00" ]
              , ["PP toolkit", "C Enterprises"      , "10.00"  ]
