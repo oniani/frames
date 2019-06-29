@@ -11,7 +11,7 @@ built-in list operations such as `map`, `concatMap`, `foldl`, `foldr`, `scanl`,
 ## Data types
 
 Miniframe has one primary data type, it is called `Miniframe`.
-Below is its definition"
+Its definition is shown below below.
 
 ```haskell
 data Miniframe = Miniframe
@@ -35,9 +35,17 @@ type Column = [String]
 Note that because of these definitions, all of Haskell's built-in list manipulation
 functions are available to the user!
 
-## Usage
+## Documentation
 
-### Constructing a miniframe
+- [Construction](#construction)
+- [Accessing the data](accessing-the-data)
+- [Counting the dimensions](counting-the-dimension)
+- [Modifications](#modifications)
+- [Removal](#removal)
+- [Pretty-printing](#pretty-printing)
+- [Leveraging Haskell's built-in goodness](#leveraging-haskell's-built-in-goodness)
+
+### Construction
 
 | Function      | Description                         | Signature                                 |
 | ------------- | ----------------------------------- | ----------------------------------------- |
@@ -87,7 +95,7 @@ main = do
     printMf mf
 ```
 
-### Getting values out of a miniframe
+### Accessing the data
 
 | Function       | Description       | Signature                     |
 | -------------- | ----------------- | ----------------------------- |
@@ -140,7 +148,7 @@ main = do
     print $ columnByname "C3" sample
 ```
 
-### Getting values out of a miniframe
+### Counting the dimensions
 
 | Function     | Description               | Signature          |
 | ------------ | ------------------------- | ------------------ |
@@ -168,7 +176,7 @@ main = do
     print $ entriesNum sample
 ```
 
-### Adding to a miniframe
+### Modifications
 
 | Function        | Description                         | Signature                                        |
 | --------------- | ----------------------------------- | ------------------------------------------------ |
@@ -216,7 +224,7 @@ main = do
     printMf $ insertColumn 3  "Nums" ["1","2","3","4","5","6","7","8"] sample
 ```
 
-### Removing from a miniframe
+### Removal
 
 | Function             | Description                 | Signature                        |
 | -------------------- | --------------------------- | -------------------------------- |
@@ -239,7 +247,7 @@ main = do
     printMf $ removeColumnByName "C4" sample
 ```
 
-### Pretty-printing a miniframe
+### Pretty-printing
 
 | Function       | Description              | Signature                    |
 | -------------- | ------------------------ | ---------------------------- |
@@ -279,7 +287,7 @@ main = do
     printMf sample
 ```
 
-### Using built-in types to work with miniframes
+### Leveraging Haskell's built-in goodness
 
 Remember that miniframe is built on top of Haskell's list data type
 which is arguably the most powerful data type in Haskell. We will
