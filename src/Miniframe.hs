@@ -21,46 +21,46 @@ module Miniframe
     , Column
 
     -- Construction
-    , sample                    -- -> Miniframe
-    , fromNull                  -- -> Miniframe
-    , fromRows                  -- Name -> Header -> [Row] -> Miniframe
-    , fromColumns               -- Name -> Header -> [Column] -> Miniframe
-    , fromCSV                   -- String -> IO Miniframe
+    , sample              -- -> Miniframe
+    , fromNull            -- -> Miniframe
+    , fromRows            -- Name -> Header -> [Row] -> Miniframe
+    , fromColumns         -- Name -> Header -> [Column] -> Miniframe
+    , fromCSV             -- String -> IO Miniframe
 
     -- Retrieval
-    , nameOf                    -- Miniframe -> Name
-    , headerOf                  -- Miniframe -> Header
-    , rowsOf                    -- Miniframe -> [Row]
-    , columnsOf                 -- Miniframe -> [Column]
-    , rowByID                   -- ID -> Miniframe -> Row
-    , columnByName              -- Name -> Miniframe -> Column
+    , nameOf              -- Miniframe -> Name
+    , headerOf            -- Miniframe -> Header
+    , rowsOf              -- Miniframe -> [Row]
+    , columnsOf           -- Miniframe -> [Column]
+    , rowByID             -- ID -> Miniframe -> Row
+    , columnByName        -- Name -> Miniframe -> Column
 
     -- Dimensions
-    , rowsNum                   -- Miniframe -> Int
-    , columnsNum                -- Miniframe -> Int
-    , entriesNum                -- Miniframe -> Int
+    , rowsNum             -- Miniframe -> Int
+    , columnsNum          -- Miniframe -> Int
+    , entriesNum          -- Miniframe -> Int
 
     -- Modification
-    , renameMf                  -- Name -> Miniframe -> Miniframe
-    , prependRow                -- Row -> Miniframe -> Miniframe
-    , appendRow                 -- Row -> Miniframe -> Miniframe
-    , insertRow                 -- ID -> Row -> Miniframe -> Miniframe
-    , prependColumn             -- Name -> Column -> Miniframe -> Miniframe
-    , appendColumn              -- Name -> Column -> Miniframe -> Miniframe
-    , insertColumn              -- Name -> Name -> Column -> Miniframe -> Miniframe
+    , renameMf            -- Name -> Miniframe -> Miniframe
+    , prependRow          -- Row -> Miniframe -> Miniframe
+    , appendRow           -- Row -> Miniframe -> Miniframe
+    , insertRow           -- ID -> Row -> Miniframe -> Miniframe
+    , prependColumn       -- Name -> Column -> Miniframe -> Miniframe
+    , appendColumn        -- Name -> Column -> Miniframe -> Miniframe
+    , insertColumn        -- Name -> Name -> Column -> Miniframe -> Miniframe
 
     -- Removal
-    , removeRowByID             -- ID -> Miniframe -> Miniframe
-    , removeColumnByName        -- Name -> Miniframe -> Miniframe
+    , removeRowByID       -- ID -> Miniframe -> Miniframe
+    , removeColumnByName  -- Name -> Miniframe -> Miniframe
 
     -- Pretty-printing
-    , printName                 -- Miniframe -> IO ()
-    , printHeader               -- Miniframe -> IO ()
-    , printRow                  -- ID -> Miniframe -> IO ()
-    , printRows                 -- Miniframe -> IO ()
-    , printColumn               -- Name -> Miniframe -> IO ()
-    , printColumns              -- Miniframe -> IO ()
-    , printMf                   -- Miniframe -> IO ()
+    , printName           -- Miniframe -> IO ()
+    , printHeader         -- Miniframe -> IO ()
+    , printRow            -- ID -> Miniframe -> IO ()
+    , printRows           -- Miniframe -> IO ()
+    , printColumn         -- Name -> Miniframe -> IO ()
+    , printColumns        -- Miniframe -> IO ()
+    , printMf             -- Miniframe -> IO ()
     ) where
 
 import Data.Char (toLower)
@@ -80,7 +80,7 @@ data Miniframe = Miniframe
     { _name   :: {-# UNPACK #-} !Name     -- Name of the Miniframe
     , _header :: {-# UNPACK #-} !Header   -- Header columns of the Miniframe
     , _rows   :: {-# UNPACK #-} ![Row] }  -- Rows of the Miniframe
-    deriving (Eq, Show)
+    deriving (Eq,Show)
 
 -------------------------------------------------------------------------------
 

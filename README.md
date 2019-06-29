@@ -1,28 +1,37 @@
 # Miniframe
 
-Miniframe package provides a nice user-friendly interface for working with
-datasets in a tabular format. Everything in a miniframe has to be of the `String`
-(or `[Char]`) type. Yet, this is not a very inconvenient choice as we will see
-in the future sections. Miniframe heavily utilizes Haskell's `List` data type
-meaning that everything within it can be manipulated directly using Haskell's
-built-in list operations such as `map`, `concatMap`, `foldl`, `foldr`, `scanl`,
-`scanr`, and so forth.
+Miniframe provides a simple and user-friendly interface for working
+with datasets in a tabular format. The idea of a miniframe comes from
+R's Data Frame object. Miniframe is just a very stripped down version
+of R's data frames. It provides just enough power and flexibility to
+conveniently explore the data. The function names as well as their
+functionalities are so simple that even those who are not familiar
+with Haskell can easily use this package for their convenience.
+
+For the sake of simplicity, everything in a miniframe has to be of the
+type `String` (the same of `[Char]`). Yet, this does not make interacting
+with miniframes very inconvenient, nor does it limit its flexibility.
+A separate section in the documentation will be dedicated to this issue.
+Miniframe heavily utilizes Haskell's `List` data type meaning that
+everything within miniframes including the fundamental data types can
+be manipulated directly using built-in list functions such as `map`,
+`concatMap`, `foldl`, `foldr`, `scanl`, `scanr`, and so forth.
 
 ## Data types
 
-Miniframe has one primary data type, it is called `Miniframe`.
-Its definition is shown below below.
+Miniframe has one fundamental data type, it is called `Miniframe`.
+Its definition is shown below.
 
 ```haskell
 data Miniframe = Miniframe
-    { _name   :: {-# UNPACK #-} !Name     -- Name of the Miniframe
-    , _header :: {-# UNPACK #-} !Header   -- Header columns of the Miniframe
-    , _rows   :: {-# UNPACK #-} ![Row] }  -- Rows of the Miniframe
+    { _name   :: {-# UNPACK #-} !Name     -- Name
+    , _header :: {-# UNPACK #-} !Header   -- Header
+    , _rows   :: {-# UNPACK #-} ![Row] }  -- Rows
     deriving (Eq, Show)
 ```
 
-Most of the functions operate on this data type. As it can seen from above, there are
-auxiliary types, which are defined as follows:
+Most of the functions operate on this data type. As it can be seen above,
+there are auxiliary types, which are defined as follows:
 
 ```haskell
 type ID     = Int
@@ -32,14 +41,17 @@ type Row    = [String]
 type Column = [String]
 ```
 
-Note that because of these definitions, all of Haskell's built-in list manipulation
-functions are available to the user!
+Note that the user does not need to be familiar with these types other
+than knowing the fact that types `Header`, `Row`, and `Column` are just
+the lists of the type `[String]`. These facts make it super simple
+to navigate through and manipulate the dataset as well as to perform
+numeric computations.
 
 ## Documentation
 
 - [Construction](#construction)
-- [Accessing the data](accessing-the-data)
-- [Counting the dimensions](counting-the-dimension)
+- [Accessing the data](#accessing-the-data)
+- [Counting the dimensions](#counting-the-dimensions)
 - [Modifications](#modifications)
 - [Removal](#removal)
 - [Pretty-printing](#pretty-printing)
@@ -47,13 +59,12 @@ functions are available to the user!
 
 ### Construction
 
-| Function      | Description                         | Signature                                 |
-| ------------- | ----------------------------------- | ----------------------------------------- |
-| `sample`      | construct out of a sample           | `Miniframe`                               |
-| `Miniframe`   | construct out of data type directly | `Name -> Header -> [Row] -> Miniframe`    |
-| `fromRows`    | construct out of rows               | `Name -> Header -> [Row] -> Miniframe`    |
-| `fromColumns` | construct out of columns            | `Name -> Header -> [Column] -> Miniframe` |
-| `fromCSV`     | construct out of CSV file           | `String -> IO Miniframe`                  |
+| Function      | Description               | Signature                                 |
+| ------------- | ------------------------- | ----------------------------------------- |
+| `sample`      | construct out of a sample | `Miniframe`                               |
+| `fromRows`    | construct out of rows     | `Name -> Header -> [Row] -> Miniframe`    |
+| `fromColumns` | construct out of columns  | `Name -> Header -> [Column] -> Miniframe` |
+| `fromCSV`     | construct out of CSV file | `String -> IO Miniframe`                  |
 
 Example usage:
 
@@ -66,16 +77,12 @@ main = do
     putStrLn "Sample miniframe\n"
     printMf sample
 
-    -- Constructing a miniframe from the data type directly
+    -- Constructing a miniframe from rows...
     let rows = [ ["Bianca" , "21", "Apple" ]
                , ["Brian"  , "20", "Orange"]
                , ["Bethany", "19", "Banana"]
                ]
 
-    putStrLn "\nMiniframe from the data type\n"
-    printMf $ Miniframe "Favorite fruits" ["Name", "Age", "Favorite Fruit"] rows
-
-    -- Constructing a miniframe from rows...
     putStrLn "\nMiniframe from the rows\n"
     printMf $ fromRows "Favorite fruits" ["Name", "Age", "Favorite Fruit"] rows
 
@@ -289,9 +296,10 @@ main = do
 
 ### Leveraging Haskell's built-in goodness
 
-Remember that miniframe is built on top of Haskell's list data type
-which is arguably the most powerful data type in Haskell. We will
-also solve the problem of everything being a string in a miniframe.
+Recall that miniframe is built on top of Haskell's built-in list
+data type which is arguably the most powerful data type in Haskell.
+The "problem" of everything being of a `String` (same as `[Char]`)
+data type is also addressed.
 
 ```haskell
 import Miniframe
