@@ -1,14 +1,39 @@
 # Miniframe
 
 Miniframe package provides a nice user-friendly interface for working with
-datasets in a tabular format. It heavily uses the Haskell's `List` data type
+datasets in a tabular format. Everything in a miniframe has to be of the `String`
+(or `[Char]`) type. Yet, this is not a very inconvenient choice as we will see
+in the future sections. Miniframe heavily utilizes Haskell's `List` data type
 meaning that everything within it can be manipulated directly using Haskell's
-built-in list operations such as `map`, `concatMap`, `foldl`, `foldr`, `scanl`, `scanr`,
-and so forth.
+built-in list operations such as `map`, `concatMap`, `foldl`, `foldr`, `scanl`,
+`scanr`, and so forth.
 
 ## Data types
 
-Miniframe has one primary data type, it is called `Miniframe`. Most of the functions operate on this data type. Besides, there are `Name`, `Header`, `Row`, and `Column` types representing the name, header, row, and column of the data frame respectively.
+Miniframe has one primary data type, it is called `Miniframe`.
+Below is its definition"
+
+```haskell
+data Miniframe = Miniframe
+    { _name   :: {-# UNPACK #-} !Name     -- Name of the Miniframe
+    , _header :: {-# UNPACK #-} !Header   -- Header columns of the Miniframe
+    , _rows   :: {-# UNPACK #-} ![Row] }  -- Rows of the Miniframe
+    deriving (Eq, Show)
+```
+
+Most of the functions operate on this data type. As it can seen from above, there are
+auxiliary types, which are defined as follows:
+
+```haskell
+type ID     = Int
+type Name   = String
+type Header = [String]
+type Row    = [String]
+type Column = [String]
+```
+
+Note that because of these definitions, all of Haskell's built-in list manipulation
+functions are available to the user!
 
 ## Usage
 
@@ -68,8 +93,8 @@ main = do
 | `columnsOf`    | get the columns   | `Miniframe -> [Column]`       |
 | `headOf`       | get the head      | `Miniframe -> Row`            |
 | `tailOf`       | get the tail      | `Miniframe -> Row`            |
-| `rowByID`      | get the row by ID | `ID -> Miniframe -> Row`      |
-| `columnByName` | get the row by ID | `Name -> Miniframe -> Column` |
+| `rowByID`      | get the row by id | `ID -> Miniframe -> Row`      |
+| `columnByName` | get the row by id | `Name -> Miniframe -> Column` |
 
 Example usage:
 
@@ -148,7 +173,7 @@ main = do
 | `appendRow`     | add a row to the end                | `Row -> Miniframe -> Miniframe`                  |
 | `prependColumn` | add a column to the beginning       | `Name -> Column -> Miniframe -> Miniframe`       |
 | `appendColumn`  | add a column to the end             | `Name -> Column -> Miniframe -> Miniframe`       |
-| `insertRow`     | add a row by given ID               | `ID -> Row -> Miniframe -> Miniframe`            |
+| `insertRow`     | add a row by given id               | `ID -> Row -> Miniframe -> Miniframe`            |
 | `insertColumn`  | add a column by given column number | `ID -> Name -> Column -> Miniframe -> Miniframe` |
 
 Example usage:
@@ -213,21 +238,71 @@ main = do
 
 ### Pretty-printing a miniframe
 
-| Function       | Description              | Signature            |
-|----------------|--------------------------|----------------------|
-| `printName`    | print the name           | `Miniframe -> IO ()` |
-| `printHeader`  | print the header         | `Miniframe -> IO ()` |
-| `printRow`     | print the row by ID      | `Miniframe -> IO ()` |
-| `printRows`    | print the rows           | `Miniframe -> IO ()` |
-| `printColumn`  | print the column by name | `Miniframe -> IO ()` |
-| `printColumns` | print the columns        | `Miniframe -> IO ()` |
+| Function       | Description              | Signature                    |
+|----------------|--------------------------|------------------------------|
+| `printName`    | print the name           | `Miniframe -> IO ()`         |
+| `printHeader`  | print the header         | `Miniframe -> IO ()`         |
+| `printRow`     | print the row by id      | `ID -> Miniframe -> IO ()`   |
+| `printRows`    | print the rows           | `Miniframe -> IO ()`         |
+| `printColumn`  | print the column by name | `Name -> Miniframe -> IO ()` |
+| `printColumns` | print the columns        | `Miniframe -> IO ()`         |
+| `printMf`      | print the miniframe      | `Miniframe -> IO ()`         |
 
 Example usage:
 
 ```haskell
+import Miniframe
 
+main = do
+    putStrLn "Pretty-printing the name of the miniframe...\n"
+    printName sample
+
+    putStrLn "\nPretty-printing the header of the miniframe...\n"
+    printHeader sample
+
+    putStrLn "\nPretty-printing the row with id 1 of the miniframe...\n"
+    printRow 1 sample
+
+    putStrLn "\nPretty-printing all rows of the miniframe...\n"
+    printRows sample
+
+    putStrLn "\nPretty-printing column C4 of the miniframe...\n"
+    printColumn "C4" sample
+
+    putStrLn "\nPretty-printing all columns of the miniframe...\n"
+    printColumns sample
+
+    putStrLn "\nPretty-printing the miniframe..."
+    printMf sample
 ```
 
+### Using built-in types to work with miniframes
+
+Remember that miniframe is built on top of Haskell's list data type
+which is arguably the most powerful data type in Haskell. We will
+also solve the problem of everything being a string in a miniframe.
+
+```haskell
+import Miniframe
+
+main = do
+    let mf = Miniframe
+
+             -- Name
+             "Miniframe with numeric data"
+
+             -- Header
+             ["Product","Company","Price"]
+
+             [ ["FP toolkit", "Haskell Enterprises", "1000.00"]
+             , ["OO toolkit", "C++ Enterprises"    , "100.00" ]
+             , ["PP toolkit", "C Enterprises"      , "10.00"  ]
+             , ["LC toolkit", "Prolog Enterprises" , "1.00"   ]
+             ]
+
+    -- Print out the sum of all prices
+    print $ sum $ map (\x -> read x::Double) $ columnByName "Price" mf
+```
 
 ## License
 

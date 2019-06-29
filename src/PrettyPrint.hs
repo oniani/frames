@@ -14,12 +14,13 @@ A module for pretty-printing.
 module PrettyPrint
     ( coloredPutStrLn
     , prettyPrint1D
+    , prettyPrint1DV
     , prettyPrint2D
     ) where
 
-import Data.List              (transpose)
+import Data.List (transpose)
 import System.Console.ANSI
-import Text.PrettyPrint.Boxes (Box, printBox, hsep, left, vcat, text)
+import Text.PrettyPrint.Boxes
 
 -- | A function to get the colored output from putStrLn command
 coloredPutStrLn :: String -> IO ()
@@ -38,6 +39,11 @@ coloredPrintBox box = do
 -- | A function to pretty-print the data in the 1D tabular format
 prettyPrint1D :: [String] -> IO ()
 prettyPrint1D row = coloredPrintBox $ hsep 4 left (map (vcat left . map text . (:[])) row)
+
+
+-- | A function to pretty-print the data in the 1D tabular format
+prettyPrint1DV :: [String] -> IO ()
+prettyPrint1DV column = coloredPrintBox $ vsep 0 left (map (hcat left . map text . (:[])) column)
 
 -- | A function to pretty-print the data in the 2D tabular format
 prettyPrint2D :: [[String]] -> IO ()

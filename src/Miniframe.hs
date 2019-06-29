@@ -58,8 +58,8 @@ module Miniframe
     , printHeader               -- Miniframe -> IO ()
     , printRow                  -- ID -> Miniframe -> IO ()
     , printRows                 -- Miniframe -> IO ()
-    -- , printColumn               -- Name -> Miniframe -> IO ()
-    -- , printColumns              -- Miniframe -> IO ()
+    , printColumn               -- Name -> Miniframe -> IO ()
+    , printColumns              -- Miniframe -> IO ()
     , printMf                   -- Miniframe -> IO ()
     ) where
 
@@ -158,7 +158,7 @@ headOf (Miniframe _ _ rows) = head rows
 tailOf :: Miniframe -> Row
 tailOf (Miniframe _ _ rows) = last rows
 
--- | Get a row by ID
+-- | Get a row by id
 rowByID :: ID -> Miniframe -> Row
 rowByID i (Miniframe _ _ rows)
     | i < 0 || i >= length rows = error "Index out of bounds"
@@ -208,8 +208,7 @@ appendRow newRow (Miniframe name header rows)
     | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
     | otherwise                                              = Miniframe name header (rows ++ [newRow])
 
-
--- | Insert a row at the given ID
+-- | Insert a row at the given id
 insertRow :: ID -> Row -> Miniframe -> Miniframe
 insertRow i newRow (Miniframe name header rows)
     | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
@@ -251,7 +250,7 @@ insertColumn index newColumnName newColumn (Miniframe name header rows)
 -- Removal
 -------------------------------------------------------------------------------
 
--- | Remove a row by ID
+-- | Remove a row by id
 removeRowByID :: ID -> Miniframe -> Miniframe
 removeRowByID i mf@(Miniframe name header rows)
     | i < 0 || i >= length rows = mf
@@ -281,11 +280,19 @@ printHeader mf = prettyPrint1D $ headerOf mf
 
 -- | Print the row by id
 printRow :: ID -> Miniframe -> IO ()
-printRow  i mf = prettyPrint2D [rowByID i mf]
+printRow i mf = prettyPrint2D [rowByID i mf]
 
 -- | Print the rows
 printRows :: Miniframe -> IO ()
 printRows mf = prettyPrint2D $ rowsOf mf
+
+-- | Print the column by name
+printColumn :: Name -> Miniframe -> IO ()
+printColumn name mf = prettyPrint1DV $ columnByName name mf
+
+-- | Print the columns
+printColumns :: Miniframe -> IO ()
+printColumns mf = prettyPrint2D $ rowsOf mf
 
 -- | Print the miniframe
 printMf :: Miniframe -> IO ()
