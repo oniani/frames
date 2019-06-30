@@ -73,13 +73,13 @@ intersect (Miniframe name header rows) (Miniframe otherName otherHeader otherRow
 
 -- | Project operation
 project :: [Name] -> Miniframe -> Miniframe
-project columnNames mf@(Miniframe name header rows)
+project columnNames miniframe@(Miniframe name header rows)
     | not $ all (`elem` header) columnNames = error "Column name does not exist"
     | otherwise                             = Miniframe newName newHeader newRows
     where
         newName   = "Projected " ++ name
         newHeader = columnNames
-        newRows   = List.transpose $ map (`columnByName` mf) columnNames
+        newRows   = List.transpose $ map (`columnByName` miniframe) columnNames
 
 -- | Select operation (it does the partial application and then filters the rows with the rest)
 select :: (Header -> Row -> Bool) -> Miniframe -> Miniframe
@@ -87,9 +87,9 @@ select predicate (Miniframe name header rows) = Miniframe ("Selected: " ++ name)
 
 -- | Rename operation
 rename :: Name -> Name -> Miniframe -> Miniframe
-rename oldColumnName newColumnName mf@(Miniframe name header rows)
+rename oldColumnName newColumnName miniframe@(Miniframe name header rows)
     | oldColumnName `elem` header = Miniframe newName newHeader newRows
-    | otherwise                   = mf
+    | otherwise                   = miniframe
     where
         index     = Maybe.fromJust (List.elemIndex oldColumnName header)
         newName   = name
@@ -100,14 +100,14 @@ rename oldColumnName newColumnName mf@(Miniframe name header rows)
 
 -- | Natural join operation
 njoin :: Miniframe -> Miniframe -> Miniframe
-njoin mf@(Miniframe name header rows) otherMf@(Miniframe otherName otherHeader otherRows)
+njoin miniframe@(Miniframe name header rows) otherMinifame@(Miniframe otherName otherHeader otherRows)
     | null commonColumnNames  = error "No common column names"
     | columns                 /= otherColumns = error "No common columns"
     | otherwise               = Miniframe newName newHeader newRows
     where
         commonColumnNames = header `listIntersect` otherHeader
-        columns           = map (`columnByName` mf) commonColumnNames
-        otherColumns      = map (`columnByName` otherMf) commonColumnNames
+        columns           = map (`columnByName` miniframe) commonColumnNames
+        otherColumns      = map (`columnByName` otherMinifame) commonColumnNames
         ----
         newName           = name ++ " njoin " ++ otherName
         newHeader         = List.nub (header ++ otherHeader)

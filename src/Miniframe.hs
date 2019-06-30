@@ -104,14 +104,14 @@ fromSample = Miniframe name header rows
   where
     name   = "Miniframe"
     header = ["C1","C2","C3","C4"]
-    rows   = [["R1-C1","R1-C2","R1-C3","R1-C4"],
-              ["R2-C1","R2-C2","R2-C3","R2-C4"],
-              ["R3-C1","R3-C2","R3-C3","R3-C4"],
-              ["R4-C1","R4-C2","R4-C3","R4-C4"],
-              ["R5-C1","R5-C2","R5-C3","R5-C4"],
-              ["R6-C1","R6-C2","R6-C3","R6-C4"],
-              ["R7-C1","R7-C2","R7-C3","R7-C4"],
-              ["R8-C1","R8-C2","R8-C3","R8-C4"]]
+    rows   = [ ["R1-C1","R1-C2","R1-C3","R1-C4"]
+             , ["R2-C1","R2-C2","R2-C3","R2-C4"]
+             , ["R3-C1","R3-C2","R3-C3","R3-C4"]
+             , ["R4-C1","R4-C2","R4-C3","R4-C4"]
+             , ["R5-C1","R5-C2","R5-C3","R5-C4"]
+             , ["R6-C1","R6-C2","R6-C3","R6-C4"]
+             , ["R7-C1","R7-C2","R7-C3","R7-C4"]
+             , ["R8-C1","R8-C2","R8-C3","R8-C4"] ]
 
 -- | Built an empty miniframe
 fromNull :: Miniframe
@@ -178,7 +178,7 @@ columnsNum (Miniframe _ _ rows) = length $ List.transpose rows
 
 -- | Get the number of entries
 entriesNum :: Miniframe -> Int
-entriesNum mf = rowsNum mf * columnsNum mf
+entriesNum miniframe = rowsNum miniframe * columnsNum miniframe
 
 -------------------------------------------------------------------------------
 -- Addition
@@ -240,15 +240,15 @@ insertColumn index newColumnName newColumn (Miniframe name header rows)
 
 -- | Remove a row by index
 removeRowByIndex :: Index -> Miniframe -> Miniframe
-removeRowByIndex index mf@(Miniframe name header rows)
-    | index < 0 || index >= length rows = mf
+removeRowByIndex index miniframe@(Miniframe name header rows)
+    | index < 0 || index >= length rows = miniframe
     | otherwise                         = Miniframe name header (take index rows ++ drop (index + 1) rows)
 
 -- | Remove a column by name
 removeColumnByName :: Name -> Miniframe -> Miniframe
-removeColumnByName columnName mf@(Miniframe name header rows)
+removeColumnByName columnName miniframe@(Miniframe name header rows)
     | columnName `elem` header = Miniframe name newHeader newRows
-    | otherwise                = mf
+    | otherwise                = miniframe
     where
       newHeader = List.delete columnName header
       index     = Maybe.fromJust $ List.elemIndex columnName header
@@ -261,26 +261,26 @@ removeColumnByName columnName mf@(Miniframe name header rows)
 -- | Convert a column of strings to a column of integers
 toInt :: Column -> [Int]
 toInt xs
-    | all (all isDigit) xs    = map (\x -> read x::Int) xs
-    | otherwise               = error "Non-integer value in the column"
+    | all (all isDigit) xs = map (\x -> read x::Int) xs
+    | otherwise            = error "Non-integer value in the column"
 
 -- | Convert a column of strings to a column of decimals
 toDecimal :: Column -> [Float]
 toDecimal xs
     | all (all isDigit) $ map (filter (/='.')) xs = map (\x -> read x::Float) xs
-    | otherwise               = error "Non-decimal value in the column"
+    | otherwise                                   = error "Non-decimal value in the column"
 
 -- | Convert a column of strings to a column of big integers
 toBigInt :: Column -> [Integer]
 toBigInt xs
-    | all (all isDigit) xs    = map (\x -> read x::Integer) xs
-    | otherwise               = error "Non-integer value in the column"
+    | all (all isDigit) xs = map (\x -> read x::Integer) xs
+    | otherwise            = error "Non-integer value in the column"
 
 -- | Convert a column of strings to a column of big decimals
 toBigDecimal :: Column -> [Double]
 toBigDecimal xs
     | all (all isDigit) $ map (filter (/='.')) xs = map (\x -> read x::Double) xs
-    | otherwise               = error "Non-decimal value in the column"
+    | otherwise                                   = error "Non-decimal value in the column"
 
 -------------------------------------------------------------------------------
 -- Pretty-printing

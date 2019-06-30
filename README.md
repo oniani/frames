@@ -61,7 +61,7 @@ It is a package for manipulating datasets in a tabular format. Besides, it is
 suitable only for the small to medium sized datasets and `String` does not have
 too much of an overhead for this task. Furthermore, using `Text` type would
 make one unable to use all the built-in `String` functions that come with
-function as well as would add an extra dependency to the package.**
+Haskell `Prelude` as well as would add an extra dependency to the package.**
 
 Note that the user does not need to be familiar with these types other
 than knowing the fact that types `Header`, `Row`, and `Column` are just
@@ -320,7 +320,7 @@ directly.
 import Miniframe
 
 main = do
-    let mf = Miniframe
+    let mf = fromRows
 
              -- Name
              "Miniframe with numeric data"
