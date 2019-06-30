@@ -120,8 +120,8 @@ thetaJoin function miniframe otherMiniframe = select function (njoin miniframe o
 -- | Cartesian product operation
 cartprod :: Miniframe -> Miniframe -> Miniframe
 cartprod (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
-    | header List.\\ otherHeader /= header = error "Cannot perform cartesian product on duplicate column names"
-    | otherwise                            = Miniframe newName newHeader newRows
+    | header `listDiff` otherHeader /= header = error "Cannot perform cartesian product on duplicate column names"
+    | otherwise                               = Miniframe newName newHeader newRows
     where
         newName   = name ++ " cartprod " ++ otherName
         newHeader = header ++ otherHeader

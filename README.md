@@ -371,10 +371,6 @@ main = do
     print $ sum $ toBigDecimal $ columnByName "Value" miniframe
 ```
 
-## Contributions
-
-Contributions are encouraged! Fork the project and pull request.
-
 ## License
 
 [GNU General Public License v3.0](LICENSE)
