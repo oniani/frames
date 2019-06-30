@@ -16,17 +16,18 @@ module Parse
     ) where
 
 import Prelude hiding        (readFile)
-import Data.Char             (toLower)
 import Data.ByteString.Lazy  (readFile)
+import Data.ByteString.Char8 (unpack)
 import Data.ByteString       (ByteString)
 import Data.Vector           (Vector, toList)
-import Data.ByteString.Char8 (unpack)
-import Data.Csv
+import Data.Csv              (HasHeader(NoHeader), decode)
+import Data.Char             (toLower)
 
-
+-- Convert a vector of vectors of bytestrings to a list of lists of strings
 bulkByteStringToStringConverter :: Vector (Vector ByteString) -> [[String]]
 bulkByteStringToStringConverter vec = [ map unpack xs | xs <- map toList $ toList vec]
 
+-- Read a CSV file
 readCSV :: String -> IO [[String]]
 readCSV filename
     | format /= ".csv" = error "Unknown file format"

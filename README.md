@@ -70,10 +70,10 @@ numeric computations.
 | `fromColumns` | construct out of columns  | `Name -> Header -> [Column] -> Miniframe` |
 | `fromCSV`     | construct out of CSV file | `String -> IO Miniframe`                  |
 
-NOTE: Do not let names `fromSample` and `fromNull` deceive you. The only thing
-these two functions do is construction a miniframe from a sample name, header,
-and rows and from nothing (resulting in an empty miniframe). For consistency,
-all these functions have a prefix `from`.
+**NOTE: Do not let names `fromSample` and `fromNull` deceive you. The only thing
+these two functions do is a construction of a miniframe from a sample name, header,
+and rows and from nothing (resulting in an empty miniframe). Just for consistency,
+all these functions have a prefix `from`.**
 
 Example usage:
 
@@ -208,10 +208,14 @@ main = do
 
 ### Type conversion and numeric computation
 
-| Function    | Description                                        | Signature           |
-| ----------- | -------------------------------------------------- | ------------------- |
-| `toInt`     | Convert a column of string to a column of integers | `Column -> [Int]`   |
-| `toDecimal` | Convert a column of stings to a column of decimals | `Column -> [Float]` |
+| Function       | Description                                                            | Signature             |
+| -------------- | ---------------------------------------------------------------------- | --------------------- |
+| `toInt`        | Convert a column of string to a column of fixed-precision integers     | `Column -> [Int]`     |
+| `toDecimal`    | Convert a column of stings to a column of fixed-precision decimals     | `Column -> [Float]`   |
+| `toBigInt`     | Convert a column of string to a column of arbitrary precision integers | `Column -> [Integer]` |
+| `toBigDecimal` | Convert a column of stings to a column of arbitrary decimals           | `Column -> [Double]`  |
+
+**NOTE: Word "arbitrary" here refers to a size that can be handled by the machine.**
 
 Example usage:
 
@@ -239,6 +243,12 @@ main = do
 
     -- Calculating the average number of dollars spent per person
     print $ sum (toDecimal $ columnByName "Total Spending" mf) / 3
+
+    -- Calculating the total quantity using arbitrary precision integers
+    print $ sum $ toBigInt $ columnByName "Quantity" mf
+
+    -- Calculating the average number of dollars spent per person using arbitrary precision decimals
+    print $ sum (toBigDecimal $ columnByName "Total Spending" mf) / 3
 ```
 
 ### Pretty-printing
@@ -284,10 +294,10 @@ import Miniframe
 
 main :: IO ()
 main = do
-    print $ rowByIndex    5         fromSample  -- Get the row by index
-    print $ columnByname  "C3"      fromSample  -- Get the column by name
-    print $ columnByIndex 1         fromSample  -- Get the column by index
-    print $ renameMf      New Name" fromSample  -- Rename the miniframe
+    print $ rowByIndex    5          fromSample  -- Get the row by index
+    print $ columnByname  "C3"       fromSample  -- Get the column by name
+    print $ columnByIndex 1          fromSample  -- Get the column by index
+    print $ renameMf      "New Name" fromSample  -- Rename the miniframe
 ```
 
 ### Leveraging Haskell's built-in goodness
@@ -316,12 +326,8 @@ main = do
              , ["LP toolkit" , "Prolog Enterprises" , "1000000000000000000.00"   ]
              ]
 
-    -- Print out the sum of all prices
-    print $ sum $ map (\x -> read x::Double) $ columnByName "Value" mf
-
-    -- Note that for this operation we could use the provided toDecimal
-    -- function, but for arbitrary precision decimals, type Double should
-    -- be used
+    -- Print out the average of all prices (note built-in sum function)
+    print $ sum $ toBigDecimal $ columnByName "Value" mf
 ```
 
 ## License

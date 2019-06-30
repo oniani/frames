@@ -55,6 +55,8 @@ module Miniframe
     -- Conversion
     , toInt               -- Column -> [Int]
     , toDecimal           -- Column -> [Float]
+    , toBigInt            -- Column -> [Integer]
+    , toBigDecimal        -- Column -> [Double]
 
     -- Pretty-printing
     , printName           -- Miniframe -> IO ()
@@ -72,7 +74,7 @@ module Miniframe
     , renameMf            -- Name -> Miniframe -> Miniframe
     ) where
 
-import Data.Char (toLower, isDigit)
+import Data.Char (isDigit)
 import Parse
 import PrettyPrint
 
@@ -265,6 +267,18 @@ toInt xs
 toDecimal :: Column -> [Float]
 toDecimal xs
     | all (all isDigit) $ map (filter (/='.')) xs = map (\x -> read x::Float) xs
+    | otherwise               = error "Non-decimal value in the column"
+
+-- | Convert a column of strings to a column of big integers
+toBigInt :: Column -> [Integer]
+toBigInt xs
+    | all (all isDigit) xs    = map (\x -> read x::Integer) xs
+    | otherwise               = error "Non-integer value in the column"
+
+-- | Convert a column of strings to a column of big decimals
+toBigDecimal :: Column -> [Double]
+toBigDecimal xs
+    | all (all isDigit) $ map (filter (/='.')) xs = map (\x -> read x::Double) xs
     | otherwise               = error "Non-decimal value in the column"
 
 -------------------------------------------------------------------------------
