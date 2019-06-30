@@ -28,6 +28,7 @@ be manipulated directly using built-in list functions such as `map`,
 - [Type conversion and numeric computation](#type-conversion-and-numeric-computation)
 - [Pretty-printing](#pretty-printing)
 - [Additional operations](#additional-operations)
+- [Relational Algebra](#relational-algebra)
 - [Leveraging Haskell's built-in goodness](#leveraging-haskell's-built-in-goodness)
 
 ### Data types
@@ -309,6 +310,32 @@ main = do
     print $ renameMf      "New Name" fromSample  -- Rename the miniframe
 ```
 
+### Relational algebra
+
+| Function    | Description                    | Signature                                |
+| ----------- | ------------------------------ | ---------------------------------------- |
+| `union`     | union of two miniframes        | `Miniframe -> Miniframe -> Miniframe`    |
+| `diff`      | difference of two miniframes   | `Miniframe -> Miniframe -> Miniframe`    |
+| `intersect` | intersection of two miniframes | `Miniframe -> Miniframe -> Miniframe`    |
+| `project`   | project a miniframe            | `[Name] -> Miniframe -> Miniframe`       |
+| `rename`    | rename a column                | `Name -> Name -> Miniframe -> Miniframe` |
+
+Example usage:
+
+```haskell
+import Miniframe
+import Relational
+
+main :: IO ()
+main = do
+    print $ fromSample `union`     fromSample  -- Union
+    print $ fromSample `diff`      fromSample  -- Difference
+    print $ fromSample `intersect` fromSample  -- Intersection
+
+    print $ project ["C2","C4"]         fromSample  -- Projection
+    print $ rename  "C1" "First Column" fromSample  -- Rename
+```
+
 ### Leveraging Haskell's built-in goodness
 
 Recall that miniframe is built on top of Haskell's built-in list
@@ -338,6 +365,10 @@ main = do
     -- Print out the average of all prices (notice the built-in sum function)
     print $ sum $ toBigDecimal $ columnByName "Value" mf
 ```
+
+## Contributions
+
+Contributions are encouraged! Fork the project and pull request.
 
 ## License
 
