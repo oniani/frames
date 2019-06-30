@@ -45,11 +45,11 @@ module Miniframe
     , prependColumn       -- Name -> Column -> Miniframe -> Miniframe
     , appendRow           -- Row -> Miniframe -> Miniframe
     , appendColumn        -- Name -> Column -> Miniframe -> Miniframe
-    , insertRow           -- ID -> Row -> Miniframe -> Miniframe
+    , insertRow           -- Index -> Row -> Miniframe -> Miniframe
     , insertColumn        -- Name -> Name -> Column -> Miniframe -> Miniframe
 
     -- Removal
-    , removeRowByID       -- ID -> Miniframe -> Miniframe
+    , removeRowByIndex    -- Index -> Miniframe -> Miniframe
     , removeColumnByName  -- Name -> Miniframe -> Miniframe
 
     -- Conversion
@@ -59,27 +59,26 @@ module Miniframe
     -- Pretty-printing
     , printName           -- Miniframe -> IO ()
     , printHeader         -- Miniframe -> IO ()
-    , printRow            -- ID -> Miniframe -> IO ()
+    , printRow            -- Index -> Miniframe -> IO ()
     , printRows           -- Miniframe -> IO ()
     , printColumn         -- Name -> Miniframe -> IO ()
     , printColumns        -- Miniframe -> IO ()
     , printMf             -- Miniframe -> IO ()
 
     -- Additional operations
-    , rowByID             -- ID -> Miniframe -> Row
+    , rowByIndex          -- Index -> Miniframe -> Row
     , columnByName        -- Name -> Miniframe -> Column
     , columnByIndex       -- Index -> Miniframe -> Column
     , renameMf            -- Name -> Miniframe -> Miniframe
     ) where
 
 import Data.Char (toLower, isDigit)
-import ParseCSV
+import Parse
 import PrettyPrint
 
 import qualified Data.List  as List
 import qualified Data.Maybe as Maybe
 
-type ID     = Int
 type Index  = Int
 type Name   = String
 type Header = [String]
@@ -87,11 +86,13 @@ type Row    = [String]
 type Column = [String]
 
 data Miniframe = Miniframe
-    { _name   :: {-# UNPACK #-} !Name     -- Name of the Miniframe
-    , _header :: {-# UNPACK #-} !Header   -- Header columns of the Miniframe
-    , _rows   :: {-# UNPACK #-} ![Row] }  -- Rows of the Miniframe
+    { _name   :: !Name     -- Name of the Miniframe
+    , _header :: !Header   -- Header columns of the Miniframe
+    , _rows   :: ![Row] }  -- Rows of the Miniframe
     deriving (Eq,Show)
 
+-------------------------------------------------------------------------------
+-- Construction
 -------------------------------------------------------------------------------
 
 -- | A sample miniframe
@@ -108,10 +109,6 @@ fromSample = Miniframe name header rows
               ["R6-C1","R6-C2","R6-C3","R6-C4"],
               ["R7-C1","R7-C2","R7-C3","R7-C4"],
               ["R8-C1","R8-C2","R8-C3","R8-C4"]]
-
--------------------------------------------------------------------------------
--- Construction
--------------------------------------------------------------------------------
 
 -- | Built an empty miniframe
 fromNull :: Miniframe
@@ -131,14 +128,10 @@ fromColumns name header columns
 
 -- | Build from the CSV file
 fromCSV :: String -> IO Miniframe
-fromCSV filename
-    | format /= ".csv" = error "Unknown file format"
-    | otherwise        = do csvData <- readCSV filename
-                            let header = head csvData
-                            let rows   = tail csvData
-                            return (Miniframe "Miniframe" header rows)
-      where
-        format = map toLower $ drop (length filename - 4) filename
+fromCSV filename = do csvData <- readCSV filename
+                      let header = head csvData
+                      let rows   = tail csvData
+                      return (Miniframe "Miniframe" header rows)
 
 -------------------------------------------------------------------------------
 -- Retrieval
@@ -218,14 +211,14 @@ appendColumn newColumnName newColumn (Miniframe name header rows)
         newHeader = header ++ [newColumnName]
         newRows   = List.transpose (List.transpose rows ++ [newColumn])
 
--- | Insert a row at the given id
-insertRow :: ID -> Row -> Miniframe -> Miniframe
-insertRow i newRow (Miniframe name header rows)
+-- | Insert a row at the given index
+insertRow :: Index -> Row -> Miniframe -> Miniframe
+insertRow index newRow (Miniframe name header rows)
     | not (null rows) && length newRow /= length (head rows) = error "Incompatible row size"
-    | otherwise = Miniframe name header newRows
+    | otherwise                                              = Miniframe name header newRows
       where
-        splitID = splitAt i rows
-        newRows = fst splitID ++ [newRow] ++ snd splitID
+        splitAtIndex = splitAt index rows
+        newRows      = fst splitAtIndex ++ [newRow] ++ snd splitAtIndex
 
 -- | Insert a column at the given index (index starts from 0)
 insertColumn :: Index -> Name -> Column -> Miniframe -> Miniframe
@@ -242,11 +235,11 @@ insertColumn index newColumnName newColumn (Miniframe name header rows)
 -- Removal
 -------------------------------------------------------------------------------
 
--- | Remove a row by id
-removeRowByID :: ID -> Miniframe -> Miniframe
-removeRowByID i mf@(Miniframe name header rows)
-    | i < 0 || i >= length rows = mf
-    | otherwise                 = Miniframe name header (take i rows ++ drop (i + 1) rows)
+-- | Remove a row by index
+removeRowByIndex :: Index -> Miniframe -> Miniframe
+removeRowByIndex index mf@(Miniframe name header rows)
+    | index < 0 || index >= length rows = mf
+    | otherwise                         = Miniframe name header (take index rows ++ drop (index + 1) rows)
 
 -- | Remove a column by name
 removeColumnByName :: Name -> Miniframe -> Miniframe
@@ -286,9 +279,9 @@ printName mf = coloredPutStrLn $ nameOf mf
 printHeader :: Miniframe -> IO ()
 printHeader mf = prettyPrint1D $ headerOf mf
 
--- | Print the row by id
-printRow :: ID -> Miniframe -> IO ()
-printRow i mf = prettyPrint2D [rowByID i mf]
+-- | Print the row by index
+printRow :: Index -> Miniframe -> IO ()
+printRow index mf = prettyPrint2D [rowByIndex index mf]
 
 -- | Print the rows
 printRows :: Miniframe -> IO ()
@@ -308,18 +301,18 @@ printMf (Miniframe name header rows) = do
     coloredPutStrLn $ name ++ "\n"
     prettyPrint2D   $ newHeader : newRows
     where
-      newHeader = "ID" : header
+      newHeader = "" : header
       newRows   = [uncurry (:) p | p <- zip (map show [0..length rows - 1]) rows]
 
 -------------------------------------------------------------------------------
 -- Additional operations
 -------------------------------------------------------------------------------
 
--- | Get a row by id
-rowByID :: ID -> Miniframe -> Row
-rowByID i (Miniframe _ _ rows)
-    | i < 0 || i >= length rows = error "Index out of bounds"
-    | otherwise                 = rows !! i
+-- | Get a row by index
+rowByIndex :: Index -> Miniframe -> Row
+rowByIndex index (Miniframe _ _ rows)
+    | index < 0 || index >= length rows = error "Index out of bounds"
+    | otherwise                         = rows !! index
 
 -- | Get a column by name
 columnByName :: Name -> Miniframe -> Column

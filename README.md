@@ -37,9 +37,9 @@ Its definition is shown below.
 
 ```haskell
 data Miniframe = Miniframe
-    { _name   :: {-# UNPACK #-} !Name     -- Name
-    , _header :: {-# UNPACK #-} !Header   -- Header
-    , _rows   :: {-# UNPACK #-} ![Row] }  -- Rows
+    { _name   :: !Name     -- Name
+    , _header :: !Header   -- Header
+    , _rows   :: ![Row] }  -- Rows
     deriving (Eq, Show)
 ```
 
@@ -47,7 +47,6 @@ Most of the functions operate on this data type. As it can be seen above,
 there are auxiliary types, which are defined as follows:
 
 ```haskell
-type ID     = Int
 type Index  = Int
 type Name   = String
 type Header = [String]
@@ -165,7 +164,7 @@ main = do
 | `prependColumn` | add a column to the beginning | `Name -> Column -> Miniframe -> Miniframe`          |
 | `appendRow`     | add a row to the end          | `Row -> Miniframe -> Miniframe`                     |
 | `appendColumn`  | add a column to the end       | `Name -> Column -> Miniframe -> Miniframe`          |
-| `insertRow`     | add a row by given id         | `ID -> Row -> Miniframe -> Miniframe`               |
+| `insertRow`     | add a row by given index      | `Index -> Row -> Miniframe -> Miniframe`            |
 | `insertColumn`  | add a column by given index   | `Index -> Name -> Column -> Miniframe -> Miniframe` |
 
 Example usage:
@@ -191,10 +190,10 @@ main = do
 
 ### Removal
 
-| Function             | Description             | Signature                        |
-| -------------------- | ----------------------- | -------------------------------- |
-| `removeRowByID`      | remove a row by id      | `ID -> Miniframe -> Miniframe`   |
-| `removeColumnByName` | remove a column by name | `Name -> Miniframe -> Miniframe` |
+| Function             | Description             | Signature                         |
+| -------------------- | ----------------------- | --------------------------------- |
+| `removeRowByIndex`   | remove a row by index   | `Index -> Miniframe -> Miniframe` |
+| `removeColumnByName` | remove a column by name | `Name -> Miniframe -> Miniframe`  |
 
 Example usage:
 
@@ -203,7 +202,7 @@ import Miniframe
 
 main :: IO ()
 main = do
-    printMf $ removeRowByID       2   fromSample  -- Removing a row by id
+    printMf $ removeRowByIndex   2    fromSample  -- Removing a row by index
     printMf $ removeColumnByName "C4" fromSample  -- Removing a column by name
 ```
 
@@ -244,15 +243,15 @@ main = do
 
 ### Pretty-printing
 
-| Function       | Description              | Signature                    |
-| -------------- | ------------------------ | ---------------------------- |
-| `printName`    | print the name           | `Miniframe -> IO ()`         |
-| `printHeader`  | print the header         | `Miniframe -> IO ()`         |
-| `printRow`     | print the row by id      | `ID -> Miniframe -> IO ()`   |
-| `printRows`    | print the rows           | `Miniframe -> IO ()`         |
-| `printColumn`  | print the column by name | `Name -> Miniframe -> IO ()` |
-| `printColumns` | print the columns        | `Miniframe -> IO ()`         |
-| `printMf`      | print the miniframe      | `Miniframe -> IO ()`         |
+| Function       | Description              | Signature                     |
+| -------------- | ------------------------ | ----------------------------- |
+| `printName`    | print the name           | `Miniframe -> IO ()`          |
+| `printHeader`  | print the header         | `Miniframe -> IO ()`          |
+| `printRow`     | print the row by index   | `Index -> Miniframe -> IO ()` |
+| `printRows`    | print the rows           | `Miniframe -> IO ()`          |
+| `printColumn`  | print the column by name | `Name -> Miniframe -> IO ()`  |
+| `printColumns` | print the columns        | `Miniframe -> IO ()`          |
+| `printMf`      | print the miniframe      | `Miniframe -> IO ()`          |
 
 Example usage:
 
@@ -262,7 +261,7 @@ import Miniframe
 main = do
     printName        fromSample  -- Pretty-printing the name
     printHeader      fromSample  -- Pretty-printing the header
-    printRow 1       fromSample  -- Pretty-printing the row by id
+    printRow 1       fromSample  -- Pretty-printing the row by index
     printRows        fromSample  -- Pretty-printing all the rows
     printColumn "C4" fromSample  -- Pretty-printing the column C4
     printColumns     fromSample  -- Pretty-printing all the columns
@@ -273,7 +272,7 @@ main = do
 
 | Function        | Description             | Signature                        |
 | --------------- | ----------------------- | -------------------------------- |
-| `rowByID`       | get the row by id       | `ID -> Miniframe -> Row`         |
+| `rowByIndex`    | get the row by index    | `Index -> Miniframe -> Row`      |
 | `columnByName`  | get the column by name  | `Name -> Miniframe -> Column`    |
 | `columnByIndex` | get the column by index | `Index -> Miniframe -> Column`   |
 | `renameMf`      | rename a miniframe      | `Name -> Miniframe -> Miniframe` |
@@ -285,10 +284,10 @@ import Miniframe
 
 main :: IO ()
 main = do
-    print $ rowByID       5         fromSample  -- Get the row by id
+    print $ rowByIndex    5         fromSample  -- Get the row by index
     print $ columnByname  "C3"      fromSample  -- Get the column by name
     print $ columnByIndex 1         fromSample  -- Get the column by index
-    print $ renameMf "    New Name" fromSample  -- Rename the miniframe
+    print $ renameMf      New Name" fromSample  -- Rename the miniframe
 ```
 
 ### Leveraging Haskell's built-in goodness
@@ -308,17 +307,17 @@ main = do
              "Miniframe with numeric data"
 
              -- Header
-             ["Product","Company","Price"]
+             ["Product","Company","Value"]
 
              -- Rows
-             [ ["FP toolkit" , "Haskell Enterprises", "1000.00"]
-             , ["OOP toolkit", "C++ Enterprises"    , "100.00" ]
-             , ["PP toolkit" , "C Enterprises"      , "10.00"  ]
-             , ["LP toolkit" , "Prolog Enterprises" , "1.00"   ]
+             [ ["FP toolkit" , "Haskell Enterprises", "1000000000000000000000.00"]
+             , ["OOP toolkit", "C++ Enterprises"    , "100000000000000000000.00" ]
+             , ["PP toolkit" , "C Enterprises"      , "10000000000000000000.00"  ]
+             , ["LP toolkit" , "Prolog Enterprises" , "1000000000000000000.00"   ]
              ]
 
     -- Print out the sum of all prices
-    print $ sum $ map (\x -> read x::Double) $ columnByName "Price" mf
+    print $ sum $ map (\x -> read x::Double) $ columnByName "Value" mf
 
     -- Note that for this operation we could use the provided toDecimal
     -- function, but for arbitrary precision decimals, type Double should
