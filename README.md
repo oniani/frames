@@ -29,7 +29,7 @@ be manipulated directly using built-in list functions such as `map`,
 - [Pretty-printing](#pretty-printing)
 - [Additional operations](#additional-operations)
 - [Relational Algebra](#relational-algebra)
-- [Leveraging Haskell's built-in goodness](#leveraging-haskell's-built-in-goodness)
+- [Leveraging Haskell's built-in goodness](#leveraging-haskells-built-in-goodness)
 
 ### Data types
 
@@ -63,6 +63,9 @@ suitable only for the small to medium sized datasets and `String` does not have
 too much of an overhead for this task. Furthermore, using `Text` type would
 make one unable to use all the built-in `String` functions that come with
 Haskell `Prelude` as well as would add an extra dependency to the package.**
+
+**P.S. I am aware of the `pack/unpack` solution, but I find it too repetitive
+and in this case, unnecessary.**
 
 Note that the user does not need to be familiar with these types other
 than knowing the fact that types `Header`, `Row`, and `Column` are just
@@ -115,9 +118,9 @@ main = do
     printMf $ fromColumns "Game scores" ["Player", "Score", "Age"] columns
 
     -- Constructing a miniframe from CSV file
-    mf <- fromCSV "schools.csv"
+    miniframe <- fromCSV "schools.csv"
 
-    printMf mf
+    printMf miniframe
 ```
 
 ### Accessing the data
@@ -234,31 +237,31 @@ import Miniframe
 
 main :: IO ()
 main = do
-    let mf = fromColumns
+    let miniframe = fromColumns
 
-             -- Name
-             "Miniframe"
+                    -- Name
+                    "Miniframe"
 
-             -- Header
-             ["Name","Quantity","Total Spending"]
+                    -- Header
+                    ["Name","Quantity","Total Spending"]
 
-             -- Columns
-             [ ["Paul" , "Ryan", "Kim"  ]
-             , ["10"   , "20"  , "30"   ]
-             , ["100.0", "200" , "300.0"]
-             ]
+                    -- Columns
+                    [ ["Paul" , "Ryan", "Kim"  ]
+                    , ["10"   , "20"  , "30"   ]
+                    , ["100.0", "200" , "300.0"]
+                    ]
 
     -- Calculating the total quantity
-    print $ sum $ toInt $ columnByName "Quantity" mf
+    print $ sum $ toInt $ columnByName "Quantity" miniframe
 
     -- Calculating the average number of dollars spent per person
-    print $ sum (toDecimal $ columnByName "Total Spending" mf) / 3
+    print $ sum (toDecimal $ columnByName "Total Spending" miniframe) / 3
 
     -- Calculating the total quantity using arbitrary precision integers
-    print $ sum $ toBigInt $ columnByName "Quantity" mf
+    print $ sum $ toBigInt $ columnByName "Quantity" miniframe
 
     -- Calculating the average number of dollars spent per person using arbitrary precision decimals
-    print $ sum (toBigDecimal $ columnByName "Total Spending" mf) / 3
+    print $ sum (toBigDecimal $ columnByName "Total Spending" miniframe) / 3
 ```
 
 ### Pretty-printing
@@ -278,6 +281,7 @@ Example usage:
 ```haskell
 import Miniframe
 
+main :: IO
 main = do
     printName        fromSample  -- Pretty-printing the name
     printHeader      fromSample  -- Pretty-printing the header
@@ -346,24 +350,25 @@ directly.
 ```haskell
 import Miniframe
 
+main :: IO ()
 main = do
-    let mf = fromRows
+    let miniframe = fromRows
 
-             -- Name
-             "Miniframe with numeric data"
+                   -- Name
+                   "Miniframe with numeric data"
 
-             -- Header
-             ["Product","Company","Value"]
+                   -- Header
+                   ["Product","Company","Value"]
 
-             -- Rows
-             [ ["FP toolkit" , "Haskell Enterprises", "1000000000000000000000.00"]
-             , ["OOP toolkit", "C++ Enterprises"    , "100000000000000000000.00" ]
-             , ["PP toolkit" , "C Enterprises"      , "10000000000000000000.00"  ]
-             , ["LP toolkit" , "Prolog Enterprises" , "1000000000000000000.00"   ]
-             ]
+                   -- Rows
+                   [ ["FP toolkit" , "Haskell Enterprises", "1000000000000000000000.00"]
+                   , ["OOP toolkit", "C++ Enterprises"    , "100000000000000000000.00" ]
+                   , ["PP toolkit" , "C Enterprises"      , "10000000000000000000.00"  ]
+                   , ["LP toolkit" , "Prolog Enterprises" , "1000000000000000000.00"   ]
+                   ]
 
     -- Print out the average of all prices (notice the built-in sum function)
-    print $ sum $ toBigDecimal $ columnByName "Value" mf
+    print $ sum $ toBigDecimal $ columnByName "Value" miniframe
 ```
 
 ## Contributions

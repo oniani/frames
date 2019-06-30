@@ -261,25 +261,25 @@ removeColumnByName columnName miniframe@(Miniframe name header rows)
 -- | Convert a column of strings to a column of integers
 toInt :: Column -> [Int]
 toInt xs
-    | all (all isDigit) xs = map (\x -> read x::Int) xs
+    | all (all isDigit) xs = map (\x -> read x :: Int) xs
     | otherwise            = error "Non-integer value in the column"
 
 -- | Convert a column of strings to a column of decimals
 toDecimal :: Column -> [Float]
 toDecimal xs
-    | all (all isDigit) $ map (filter (/='.')) xs = map (\x -> read x::Float) xs
+    | all (all isDigit) $ map (filter (/='.')) xs = map (\x -> read x :: Float) xs
     | otherwise                                   = error "Non-decimal value in the column"
 
 -- | Convert a column of strings to a column of big integers
 toBigInt :: Column -> [Integer]
 toBigInt xs
-    | all (all isDigit) xs = map (\x -> read x::Integer) xs
+    | all (all isDigit) xs = map (\x -> read x :: Integer) xs
     | otherwise            = error "Non-integer value in the column"
 
 -- | Convert a column of strings to a column of big decimals
 toBigDecimal :: Column -> [Double]
 toBigDecimal xs
-    | all (all isDigit) $ map (filter (/='.')) xs = map (\x -> read x::Double) xs
+    | all (all isDigit) $ map (filter (/='.')) xs = map (\x -> read x :: Double) xs
     | otherwise                                   = error "Non-decimal value in the column"
 
 -------------------------------------------------------------------------------

@@ -9,7 +9,7 @@ Stability   :  experimental
 Portability :  portable
 
 Optimizations.
-Confer to https://github.com/nh2/haskell-ordnub
+Confer https://github.com/nh2/haskell-ordnub
 -}
 
 module Optimize

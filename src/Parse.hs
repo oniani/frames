@@ -36,6 +36,6 @@ readCSV filename
                                 Left  err -> error err
                                 Right vec -> return $
                                              bulkByteStringToStringConverter
-                                             (vec::(Vector (Vector ByteString)))
+                                             (vec :: (Vector (Vector ByteString)))
       where
         format = map toLower $ drop (length filename - 4) filename
