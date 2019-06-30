@@ -23,9 +23,11 @@ module Relational
     , cartprod   -- Miniframe -> Miniframe -> Miniframe
     ) where
 
+import Miniframe
+import Optimize
+
 import qualified Data.List  as List
 import qualified Data.Maybe as Maybe
-import Miniframe
 
 -------------------------------------------------------------------------------
 --                         Relational algebra
@@ -47,7 +49,7 @@ union (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
     where
         newName   = "Union: " ++ name ++ " and " ++ otherName
         newHeader = header
-        newRows   = rows `List.union` otherRows
+        newRows   = rows `listUnion` otherRows
 
 -- | Difference operation
 diff :: Miniframe -> Miniframe -> Miniframe
@@ -57,7 +59,7 @@ diff (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
     where
         newName   = "Difference: " ++ name ++ " and " ++ otherName
         newHeader = header
-        newRows   = rows List.\\ otherRows
+        newRows   = rows `listDiff` otherRows
 
 -- | Intersect operation
 intersect :: Miniframe -> Miniframe -> Miniframe
@@ -67,7 +69,7 @@ intersect (Miniframe name header rows) (Miniframe otherName otherHeader otherRow
     where
         newName   = "Intersection: " ++ name ++ " and " ++ otherName
         newHeader = header
-        newRows   = rows `List.intersect` otherRows
+        newRows   = rows `listIntersect` otherRows
 
 -- | Project operation
 project :: [Name] -> Miniframe -> Miniframe
@@ -103,7 +105,7 @@ njoin mf@(Miniframe name header rows) otherMf@(Miniframe otherName otherHeader o
     | columns                 /= otherColumns = error "No common columns"
     | otherwise               = Miniframe newName newHeader newRows
     where
-        commonColumnNames = header `List.intersect` otherHeader
+        commonColumnNames = header `listIntersect` otherHeader
         columns           = map (`columnByName` mf) commonColumnNames
         otherColumns      = map (`columnByName` otherMf) commonColumnNames
         ----

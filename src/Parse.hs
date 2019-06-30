@@ -7,9 +7,9 @@ License     :  GNU General Public License v3.0
 Maintainer  :  onianidavid@gmail.com
 Stability   :  experimental
 Portability :  portable
--}
 
-{-# LANGUAGE ScopedTypeVariables #-}
+Parse the CSV files.
+-}
 
 module Parse
     ( readCSV
@@ -23,7 +23,7 @@ import Data.Vector           (Vector, toList)
 import Data.Csv              (HasHeader(NoHeader), decode)
 import Data.Char             (toLower)
 
--- Convert a vector of vectors of bytestrings to a list of lists of strings
+-- Bulk conversion gadget
 bulkByteStringToStringConverter :: Vector (Vector ByteString) -> [[String]]
 bulkByteStringToStringConverter vec = [ map unpack xs | xs <- map toList $ toList vec]
 

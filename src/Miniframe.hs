@@ -75,6 +75,7 @@ module Miniframe
     ) where
 
 import Data.Char (isDigit)
+import Optimize  (ordNub)
 import Parse
 import PrettyPrint
 
@@ -119,14 +120,14 @@ fromNull = Miniframe "" [] []
 -- | Build from rows
 fromRows :: Name -> Header -> [Row] -> Miniframe
 fromRows name header rows
-    | List.nub header /= header = error "Duplicate header names"
-    | otherwise                 = Miniframe name header rows
+    | ordNub header /= header = error "Duplicate header names"
+    | otherwise               = Miniframe name header rows
 
 -- | Build from columns
 fromColumns :: Name -> Header -> [Column] -> Miniframe
 fromColumns name header columns
-    | List.nub header /= header = error "Duplicate header names"
-    | otherwise                 = Miniframe name header $ List.transpose columns
+    | ordNub header /= header = error "Duplicate header names"
+    | otherwise               = Miniframe name header $ List.transpose columns
 
 -- | Build from the CSV file
 fromCSV :: String -> IO Miniframe

@@ -54,6 +54,15 @@ type Row    = [String]
 type Column = [String]
 ```
 
+**NOTE: For those who are wondering, I WAS considering using `Text` type
+in lieu of `String`, but I ended up preferring the `String` type. The reason
+is that Miniframe package is not designed for general _text processing_ tasks.
+It is a package for manipulating datasets in a tabular format. Besides, it is
+suitable only for the small to medium sized datasets and `String` does not have
+too much of an overhead for this task. Furthermore, using `Text` type would
+make one unable to use all the built-in `String` functions that come with
+function as well as would add an extra dependency to the package.**
+
 Note that the user does not need to be familiar with these types other
 than knowing the fact that types `Header`, `Row`, and `Column` are just
 the lists of the type `[String]`. These facts make it super simple
@@ -304,8 +313,8 @@ main = do
 
 Recall that miniframe is built on top of Haskell's built-in list
 data type which is arguably the most powerful data type in Haskell.
-The "problem" of everything being of a `String` (same as `[Char]`)
-data type is also addressed.
+This means that we can use the built-in list manipulation functions
+directly.
 
 ```haskell
 import Miniframe
@@ -326,7 +335,7 @@ main = do
              , ["LP toolkit" , "Prolog Enterprises" , "1000000000000000000.00"   ]
              ]
 
-    -- Print out the average of all prices (note built-in sum function)
+    -- Print out the average of all prices (notice the built-in sum function)
     print $ sum $ toBigDecimal $ columnByName "Value" mf
 ```
 

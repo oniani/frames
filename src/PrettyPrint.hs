@@ -40,7 +40,6 @@ coloredPrintBox box = do
 prettyPrint1D :: [String] -> IO ()
 prettyPrint1D row = coloredPrintBox $ hsep 4 left (map (vcat left . map text . (:[])) row)
 
-
 -- | A function to pretty-print the data in the 1D tabular format
 prettyPrint1DV :: [String] -> IO ()
 prettyPrint1DV column = coloredPrintBox $ vsep 0 left (map (hcat left . map text . (:[])) column)
