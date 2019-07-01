@@ -50,7 +50,7 @@ there are auxiliary types, which are defined as follows:
 ```haskell
 type Index  = Int
 type Name   = String
-type Header = [String]
+type Header = [Name]
 type Row    = [String]
 type Column = [String]
 ```

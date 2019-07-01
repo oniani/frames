@@ -84,7 +84,7 @@ import qualified Data.Maybe as Maybe
 
 type Index  = Int
 type Name   = String
-type Header = [String]
+type Header = [Name]
 type Row    = [String]
 type Column = [String]
 
