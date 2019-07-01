@@ -24,18 +24,19 @@ import Data.Csv              (HasHeader(NoHeader), decode)
 import Data.Char             (toLower)
 
 -- Bulk conversion gadget
-bulkByteStringToStringConverter :: Vector (Vector ByteString) -> [[String]]
-bulkByteStringToStringConverter vec = [ map unpack xs | xs <- map toList $ toList vec]
+bulkConverter :: Vector (Vector ByteString) -> [[String]]
+bulkConverter vec = [map unpack xs | xs <- map toList $ toList vec]
 
 -- Read a CSV file
 readCSV :: String -> IO [[String]]
-readCSV filename
-    | format /= ".csv" = error "Unknown file format"
-    | otherwise        = do csvData <- readFile filename
-                            case decode NoHeader csvData of
-                                Left  err -> error err
-                                Right vec -> return $
-                                             bulkByteStringToStringConverter
-                                             (vec :: (Vector (Vector ByteString)))
+readCSV fn
+    | fmt /= ".csv" = error "Unknown file format"
+    | otherwise     = do
+        csv <- readFile fn
+        case decode NoHeader csv of
+            Left  err -> error err
+            Right vec -> return $
+                         bulkConverter
+                         (vec :: (Vector (Vector ByteString)))
       where
-        format = map toLower $ drop (length filename - 4) filename
+        fmt = map toLower $ drop (length fn - 4) fn

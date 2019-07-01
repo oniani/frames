@@ -43,86 +43,86 @@ import qualified Data.Maybe as Maybe
 
 -- | Union operation
 union :: Miniframe -> Miniframe -> Miniframe
-union (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
-    | header /= otherHeader = error "Header mismatch"
-    | otherwise             = Miniframe newName newHeader newRows
+union (Miniframe n h rs) (Miniframe on oh ors)
+    | h /= oh   = error "Header mismatch"
+    | otherwise = Miniframe nn nh nrs
     where
-        newName   = "Union: " ++ name ++ " and " ++ otherName
-        newHeader = header
-        newRows   = rows `listUnion` otherRows
+        nn  = "Union: " ++ n ++ " and " ++ on
+        nh  = h
+        nrs = rs `listUnion` ors
 
 -- | Difference operation
 diff :: Miniframe -> Miniframe -> Miniframe
-diff (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
-    | header /= otherHeader = error "Header mismatch"
-    | otherwise             = Miniframe newName newHeader newRows
+diff (Miniframe n h rs) (Miniframe on oh ors)
+    | h /= oh = error "Header mismatch"
+    | otherwise = Miniframe nn nh nrs
     where
-        newName   = "Difference: " ++ name ++ " and " ++ otherName
-        newHeader = header
-        newRows   = rows `listDiff` otherRows
+        nn  = "Difference: " ++ n ++ " and " ++ on
+        nh  = h
+        nrs = rs `listDiff` ors
 
 -- | Intersect operation
 intersect :: Miniframe -> Miniframe -> Miniframe
-intersect (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
-    | header /= otherHeader = error "Header mismatch"
-    | otherwise             = Miniframe newName newHeader newRows
+intersect (Miniframe n h rs) (Miniframe on oh ors)
+    | h /= oh   = error "Header mismatch"
+    | otherwise = Miniframe nn nh nrs
     where
-        newName   = "Intersection: " ++ name ++ " and " ++ otherName
-        newHeader = header
-        newRows   = rows `listIntersect` otherRows
+        nn  = "Intersection: " ++ n ++ " and " ++ on
+        nh  = h
+        nrs = rs `listIntersect` ors
 
 -- | Project operation
 project :: [Name] -> Miniframe -> Miniframe
-project columnNames miniframe@(Miniframe name header rows)
-    | not $ all (`elem` header) columnNames = error "Column name does not exist"
-    | otherwise                             = Miniframe newName newHeader newRows
+project cns mf@(Miniframe n h rs)
+    | not $ all (`elem` h) cns = error "Column name does not exist"
+    | otherwise                = Miniframe nn nh nrs
     where
-        newName   = "Projected " ++ name
-        newHeader = columnNames
-        newRows   = List.transpose $ map (`columnByName` miniframe) columnNames
+        nn  = "Projected " ++ n
+        nh  = cns
+        nrs = List.transpose $ map (`columnByName` mf) cns
 
 -- | Select operation (it does the partial application and then filters the rows with the rest)
 select :: (Header -> Row -> Bool) -> Miniframe -> Miniframe
-select predicate (Miniframe name header rows) = Miniframe ("Selected: " ++ name) header (filter (predicate header) rows)
+select p (Miniframe n h rs) = Miniframe ("Selected: " ++ n) h (filter (p h) rs)
 
 -- | Rename operation
 rename :: Name -> Name -> Miniframe -> Miniframe
-rename oldColumnName newColumnName miniframe@(Miniframe name header rows)
-    | oldColumnName `elem` header = Miniframe newName newHeader newRows
-    | otherwise                   = miniframe
+rename ocn ncn mf@(Miniframe n h rs)
+    | ocn `elem` h = Miniframe nn nh nrs
+    | otherwise    = mf
     where
-        index     = Maybe.fromJust (List.elemIndex oldColumnName header)
-        newName   = name
-        newHeader = take index header ++ [newColumnName] ++ drop (index + 1) header
-        newRows   = rows
+        i   = Maybe.fromJust (List.elemIndex ocn h)
+        nn  = n
+        nh  = take i h ++ [ncn] ++ drop (i + 1) h
+        nrs = rs
 
 -- The following is a proto version that needs to be tested
 
 -- | Natural join operation
 njoin :: Miniframe -> Miniframe -> Miniframe
-njoin miniframe@(Miniframe name header rows) otherMinifame@(Miniframe otherName otherHeader otherRows)
-    | null commonColumnNames  = error "No common column names"
-    | columns                 /= otherColumns = error "No common columns"
-    | otherwise               = Miniframe newName newHeader newRows
+njoin mf@(Miniframe n h rs) omf@(Miniframe on oh ors)
+    | null ccns  = error "No common column names"
+    | cs /= ocs  = error "No common columns"
+    | otherwise  = Miniframe nn nh nrs
     where
-        commonColumnNames = header `listIntersect` otherHeader
-        columns           = map (`columnByName` miniframe) commonColumnNames
-        otherColumns      = map (`columnByName` otherMinifame) commonColumnNames
+        ccns = h `listIntersect` oh
+        cs   = map (`columnByName` mf) ccns
+        ocs  = map (`columnByName` omf) ccns
         ----
-        newName           = name ++ " njoin " ++ otherName
-        newHeader         = List.nub (header ++ otherHeader)
-        newRows           = List.nub (rows ++ otherRows)
+        nn  = n ++ " njoin " ++ on
+        nh  = List.nub (h ++ oh)
+        nrs = List.nub (rs ++ ors)
 
 -- | Theta join operation
 thetaJoin :: (Header -> Row -> Bool) -> Miniframe -> Miniframe -> Miniframe
-thetaJoin function miniframe otherMiniframe = select function (njoin miniframe otherMiniframe)
+thetaJoin f mf omf = select f (njoin mf omf)
 
 -- | Cartesian product operation
 cartprod :: Miniframe -> Miniframe -> Miniframe
-cartprod (Miniframe name header rows) (Miniframe otherName otherHeader otherRows)
-    | header `listDiff` otherHeader /= header = error "Cannot perform cartesian product on duplicate column names"
-    | otherwise                               = Miniframe newName newHeader newRows
+cartprod (Miniframe n h rs) (Miniframe on oh ors)
+    | h `listDiff` oh /= h = error "Cannot perform cartesian product on duplicate column names"
+    | otherwise            = Miniframe nn nh nrs
     where
-        newName   = name ++ " cartprod " ++ otherName
-        newHeader = header ++ otherHeader
-        newRows   = [x ++ y | x <- rows, y <- otherRows]
+        nn  = n ++ " cartprod " ++ on
+        nh  = h ++ oh
+        nrs = [x ++ y | x <- rs, y <- ors]

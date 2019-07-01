@@ -1,6 +1,6 @@
 {- |
 Module      :  PrettyPrint.hs
-Description :  Pretty-printing functions for tabular 2D data frames
+Description :  Pretty-printing functions for miniframes
 Copyright   :  (c) David Oniani
 License     :  GNU General Public License v3.0
 
@@ -24,26 +24,26 @@ import Text.PrettyPrint.Boxes
 
 -- | A function to get the colored output from putStrLn command
 coloredPutStrLn :: String -> IO ()
-coloredPutStrLn str = do
+coloredPutStrLn s = do
     setSGR [SetColor Foreground Dull Green]
-    putStrLn str
+    putStrLn s
     setSGR []
 
 -- | A helper function to get the colored output from putStrLn command
 coloredPrintBox :: Box -> IO ()
-coloredPrintBox box = do
+coloredPrintBox b = do
     setSGR [SetColor Foreground Dull Green]
-    printBox box
+    printBox b
     setSGR []
 
 -- | A function to pretty-print the data in the 1D tabular format
 prettyPrint1D :: [String] -> IO ()
-prettyPrint1D row = coloredPrintBox $ hsep 4 left (map (vcat left . map text . (:[])) row)
+prettyPrint1D r = coloredPrintBox $ hsep 4 left (map (vcat left . map text . (:[])) r)
 
 -- | A function to pretty-print the data in the 1D tabular format
 prettyPrint1DV :: [String] -> IO ()
-prettyPrint1DV column = coloredPrintBox $ vsep 0 left (map (hcat left . map text . (:[])) column)
+prettyPrint1DV c = coloredPrintBox $ vsep 0 left (map (hcat left . map text . (:[])) c)
 
 -- | A function to pretty-print the data in the 2D tabular format
 prettyPrint2D :: [[String]] -> IO ()
-prettyPrint2D rows = coloredPrintBox $ hsep 4 left (map (vcat left . map text) (transpose rows))
+prettyPrint2D rs = coloredPrintBox $ hsep 4 left (map (vcat left . map text) (transpose rs))
