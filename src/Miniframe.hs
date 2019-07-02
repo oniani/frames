@@ -89,10 +89,10 @@ type Row    = [String]
 type Column = [String]
 
 data Miniframe = Miniframe
-    { _name   :: !Name     -- Name of the Miniframe
-    , _header :: !Header   -- Header columns of the Miniframe
-    , _rows   :: ![Row] }  -- Rows of the Miniframe
-    deriving (Eq,Show)
+    { name   :: !Name     -- Name of the Miniframe
+    , header :: !Header   -- Header columns of the Miniframe
+    , rows   :: ![Row]    -- Rows of the Miniframe
+    } deriving (Eq, Show)
 
 -------------------------------------------------------------------------------
 -- Construction
@@ -111,7 +111,8 @@ fromSample = Miniframe n h rs
          , ["R5-C1","R5-C2","R5-C3","R5-C4"]
          , ["R6-C1","R6-C2","R6-C3","R6-C4"]
          , ["R7-C1","R7-C2","R7-C3","R7-C4"]
-         , ["R8-C1","R8-C2","R8-C3","R8-C4"] ]
+         , ["R8-C1","R8-C2","R8-C3","R8-C4"]
+         ]
 
 -- | Built an empty miniframe
 fromNull :: Miniframe
