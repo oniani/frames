@@ -1,8 +1,8 @@
-# Miniframe
+# MiniFrame
 
-Miniframe provides a simple and user-friendly interface for working
+MiniFrame provides a simple and user-friendly interface for working
 with datasets in a tabular format. The idea of a miniframe comes from
-programming language R's `data.frame` object. Miniframe is just a very
+programming language R's `data.frame` object. MiniFrame is just a very
 stripped down version of R's data frames. It provides just enough power
 and flexibility to conveniently explore the data. The function names as
 well as their functionalities are so simple that even those who are not
@@ -12,7 +12,7 @@ For the sake of simplicity, everything in a miniframe is of the type
 `String` (the same as `[Char]`). Yet, this does not make interacting
 with miniframes very inconvenient, nor does it limit its flexibility.
 A separate section in the documentation will be dedicated to this issue.
-Miniframe heavily utilizes Haskell's `List` data type meaning that
+MiniFrame heavily utilizes Haskell's `List` data type meaning that
 everything within miniframes including the fundamental data types can
 be manipulated directly using built-in list functions such as `map`,
 `concatMap`, `foldl`, `foldr`, `scanl`, `scanr`, and so forth.
@@ -33,11 +33,11 @@ be manipulated directly using built-in list functions such as `map`,
 
 ### Data types
 
-Miniframe has one fundamental data type, it is called `Miniframe`.
+MiniFrame has one fundamental data type, it is called `MiniFrame`.
 Its definition is shown below.
 
 ```haskell
-data Miniframe = Miniframe
+data MiniFrame = MiniFrame
     { _name   :: !Name     -- Name
     , _header :: !Header   -- Header
     , _rows   :: ![Row] }  -- Rows
@@ -57,7 +57,7 @@ type Column = [String]
 
 **NOTE: For those who are wondering, I WAS considering using `Text` type
 in lieu of `String`, but I ended up preferring the `String` type. The reason
-is that Miniframe package is not designed for general _text processing_ tasks.
+is that MiniFrame package is not designed for general _text processing_ tasks.
 It is a package for manipulating datasets in a tabular format. Besides, it is
 suitable only for the small to medium sized datasets and `String` does not have
 too much of an overhead for this task. Furthermore, using `Text` type would
@@ -77,11 +77,11 @@ numeric computations.
 
 | Function      | Description               | Signature                                 |
 | ------------- | ------------------------- | ----------------------------------------- |
-| `fromSample`  | construct out of a sample | `Miniframe`                               |
-| `fromNull`    | construct out of nothing  | `Miniframe`                               |
-| `fromRows`    | construct out of rows     | `Name -> Header -> [Row] -> Miniframe`    |
-| `fromColumns` | construct out of columns  | `Name -> Header -> [Column] -> Miniframe` |
-| `fromCSV`     | construct out of CSV file | `String -> IO Miniframe`                  |
+| `fromSample`  | construct out of a sample | `MiniFrame`                               |
+| `fromNull`    | construct out of nothing  | `MiniFrame`                               |
+| `fromRows`    | construct out of rows     | `Name -> Header -> [Row] -> MiniFrame`    |
+| `fromColumns` | construct out of columns  | `Name -> Header -> [Column] -> MiniFrame` |
+| `fromCSV`     | construct out of CSV file | `String -> IO MiniFrame`                  |
 
 **NOTE: Do not let names `fromSample` and `fromNull` deceive you. The only thing
 these two functions do is a construction of a miniframe from a sample name, header,
@@ -91,15 +91,15 @@ all these functions have a prefix `from`.**
 Example usage:
 
 ```haskell
-import Miniframe
+import MiniFrame
 
 main :: IO ()
 main = do
     -- A sample miniframe
-    printMf fromSample
+    printMF fromSample
 
     -- A null miniframe
-    printMf fromNull
+    printMF fromNull
 
     -- Constructing a miniframe from rows
     let rows = [ ["Bianca" , "21", "Apple" ]
@@ -107,7 +107,7 @@ main = do
                , ["Bethany", "19", "Banana"]
                ]
 
-    printMf $ fromRows "Favorite fruits" ["Name", "Age", "Favorite Fruit"] rows
+    printMF $ fromRows "Favorite fruits" ["Name", "Age", "Favorite Fruit"] rows
 
     -- Constructing a miniframe from columns
     let columns = [ ["Walter", "John", "Eric"]
@@ -115,29 +115,29 @@ main = do
                   , ["18"    , "20"  , "19"  ]
                   ]
 
-    printMf $ fromColumns "Game scores" ["Player", "Score", "Age"] columns
+    printMF $ fromColumns "Game scores" ["Player", "Score", "Age"] columns
 
     -- Constructing a miniframe from CSV file
     miniframe <- fromCSV "schools.csv"
 
-    printMf miniframe
+    printMF miniframe
 ```
 
 ### Accessing the data
 
 | Function    | Description     | Signature               |
 | ----------- | --------------- | ----------------------- |
-| `nameOf`    | get the name    | `Miniframe -> Name`     |
-| `headerOf`  | get the header  | `Miniframe -> Header`   |
-| `rowsOf`    | get the rows    | `Miniframe -> [Row]`    |
-| `columnsOf` | get the columns | `Miniframe -> [Column]` |
-| `headOf`    | get the head    | `Miniframe -> Row`      |
-| `tailOf`    | get the tail    | `Miniframe -> [Row]`    |
+| `nameOf`    | get the name    | `MiniFrame -> Name`     |
+| `headerOf`  | get the header  | `MiniFrame -> Header`   |
+| `rowsOf`    | get the rows    | `MiniFrame -> [Row]`    |
+| `columnsOf` | get the columns | `MiniFrame -> [Column]` |
+| `headOf`    | get the head    | `MiniFrame -> Row`      |
+| `tailOf`    | get the tail    | `MiniFrame -> [Row]`    |
 
 Example usage:
 
 ```haskell
-import Miniframe
+import MiniFrame
 
 main :: IO ()
 main = do
@@ -153,14 +153,14 @@ main = do
 
 | Function     | Description               | Signature          |
 | ------------ | ------------------------- | ------------------ |
-| `rowsNum`    | get the number of rows    | `Miniframe -> Int` |
-| `columnsNum` | get the number of columns | `Miniframe -> Int` |
-| `entriesNum` | get the number of cells   | `Miniframe -> Int` |
+| `rowsNum`    | get the number of rows    | `MiniFrame -> Int` |
+| `columnsNum` | get the number of columns | `MiniFrame -> Int` |
+| `entriesNum` | get the number of cells   | `MiniFrame -> Int` |
 
 Example usage:
 
 ```haskell
-import Miniframe
+import MiniFrame
 
 main :: IO ()
 main = do
@@ -173,31 +173,31 @@ main = do
 
 | Function        | Description                   | Signature                                           |
 | --------------- | ----------------------------- | --------------------------------------------------- |
-| `prependRow`    | add a row to the beginning    | `Row -> Miniframe -> Miniframe`                     |
-| `prependColumn` | add a column to the beginning | `Name -> Column -> Miniframe -> Miniframe`          |
-| `appendRow`     | add a row to the end          | `Row -> Miniframe -> Miniframe`                     |
-| `appendColumn`  | add a column to the end       | `Name -> Column -> Miniframe -> Miniframe`          |
-| `insertRow`     | add a row by given index      | `Index -> Row -> Miniframe -> Miniframe`            |
-| `insertColumn`  | add a column by given index   | `Index -> Name -> Column -> Miniframe -> Miniframe` |
+| `prependRow`    | add a row to the beginning    | `Row -> MiniFrame -> MiniFrame`                     |
+| `prependColumn` | add a column to the beginning | `Name -> Column -> MiniFrame -> MiniFrame`          |
+| `appendRow`     | add a row to the end          | `Row -> MiniFrame -> MiniFrame`                     |
+| `appendColumn`  | add a column to the end       | `Name -> Column -> MiniFrame -> MiniFrame`          |
+| `insertRow`     | add a row by given index      | `Index -> Row -> MiniFrame -> MiniFrame`            |
+| `insertColumn`  | add a column by given index   | `Index -> Name -> Column -> MiniFrame -> MiniFrame` |
 
 Example usage:
 
 ```haskell
-import Miniframe
+import MiniFrame
 
 main :: IO ()
 main = do
     let newRow    = map show [1..4]  -- New row
     let newColumn = map show [1..8]  -- New column
 
-    printMf $ prependRow           newRow    fromSample  -- Prepending a row
-    printMf $ prependColumn "Nums" newColumn fromSample  -- Prepending a column
+    printMF $ prependRow           newRow    fromSample  -- Prepending a row
+    printMF $ prependColumn "Nums" newColumn fromSample  -- Prepending a column
 
-    printMf $ appendRow           newRow    fromSample  -- Appending a row
-    printMf $ appendColumn "Nums" newColumn fromSample  -- Appending a column
+    printMF $ appendRow           newRow    fromSample  -- Appending a row
+    printMF $ appendColumn "Nums" newColumn fromSample  -- Appending a column
 
-    printMf $ insertRow    1        newRow    fromSample  -- Inserting a row
-    printMf $ insertColumn 3 "Nums" newColumn fromSample  -- Inserting a column
+    printMF $ insertRow    1        newRow    fromSample  -- Inserting a row
+    printMF $ insertColumn 3 "Nums" newColumn fromSample  -- Inserting a column
 
 ```
 
@@ -205,18 +205,18 @@ main = do
 
 | Function             | Description             | Signature                         |
 | -------------------- | ----------------------- | --------------------------------- |
-| `removeRowByIndex`   | remove a row by index   | `Index -> Miniframe -> Miniframe` |
-| `removeColumnByName` | remove a column by name | `Name -> Miniframe -> Miniframe`  |
+| `removeRowByIndex`   | remove a row by index   | `Index -> MiniFrame -> MiniFrame` |
+| `removeColumnByName` | remove a column by name | `Name -> MiniFrame -> MiniFrame`  |
 
 Example usage:
 
 ```haskell
-import Miniframe
+import MiniFrame
 
 main :: IO ()
 main = do
-    printMf $ removeRowByIndex   2    fromSample  -- Removing a row by index
-    printMf $ removeColumnByName "C4" fromSample  -- Removing a column by name
+    printMF $ removeRowByIndex   2    fromSample  -- Removing a row by index
+    printMF $ removeColumnByName "C4" fromSample  -- Removing a column by name
 ```
 
 ### Type conversion and numeric computation
@@ -233,14 +233,14 @@ main = do
 Example usage:
 
 ```haskell
-import Miniframe
+import MiniFrame
 
 main :: IO ()
 main = do
     let miniframe = fromColumns
 
                     -- Name
-                    "Miniframe"
+                    "MiniFrame"
 
                     -- Header
                     ["Name","Quantity","Total Spending"]
@@ -268,18 +268,18 @@ main = do
 
 | Function       | Description              | Signature                     |
 | -------------- | ------------------------ | ----------------------------- |
-| `printName`    | print the name           | `Miniframe -> IO ()`          |
-| `printHeader`  | print the header         | `Miniframe -> IO ()`          |
-| `printRow`     | print the row by index   | `Index -> Miniframe -> IO ()` |
-| `printRows`    | print the rows           | `Miniframe -> IO ()`          |
-| `printColumn`  | print the column by name | `Name -> Miniframe -> IO ()`  |
-| `printColumns` | print the columns        | `Miniframe -> IO ()`          |
-| `printMf`      | print the miniframe      | `Miniframe -> IO ()`          |
+| `printName`    | print the name           | `MiniFrame -> IO ()`          |
+| `printHeader`  | print the header         | `MiniFrame -> IO ()`          |
+| `printRow`     | print the row by index   | `Index -> MiniFrame -> IO ()` |
+| `printRows`    | print the rows           | `MiniFrame -> IO ()`          |
+| `printColumn`  | print the column by name | `Name -> MiniFrame -> IO ()`  |
+| `printColumns` | print the columns        | `MiniFrame -> IO ()`          |
+| `printMF`      | print the miniframe      | `MiniFrame -> IO ()`          |
 
 Example usage:
 
 ```haskell
-import Miniframe
+import MiniFrame
 
 main :: IO
 main = do
@@ -289,22 +289,22 @@ main = do
     printRows        fromSample  -- Pretty-printing all the rows
     printColumn "C4" fromSample  -- Pretty-printing the column C4
     printColumns     fromSample  -- Pretty-printing all the columns
-    printMf          fromSample  -- Pretty-printing the miniframe
+    printMF          fromSample  -- Pretty-printing the miniframe
 ```
 
 ### Additional operations
 
 | Function        | Description             | Signature                        |
 | --------------- | ----------------------- | -------------------------------- |
-| `rowByIndex`    | get the row by index    | `Index -> Miniframe -> Row`      |
-| `columnByName`  | get the column by name  | `Name -> Miniframe -> Column`    |
-| `columnByIndex` | get the column by index | `Index -> Miniframe -> Column`   |
-| `renameMf`      | rename a miniframe      | `Name -> Miniframe -> Miniframe` |
+| `rowByIndex`    | get the row by index    | `Index -> MiniFrame -> Row`      |
+| `columnByName`  | get the column by name  | `Name -> MiniFrame -> Column`    |
+| `columnByIndex` | get the column by index | `Index -> MiniFrame -> Column`   |
+| `renameMf`      | rename a miniframe      | `Name -> MiniFrame -> MiniFrame` |
 
 Example usage:
 
 ```haskell
-import Miniframe
+import MiniFrame
 
 main :: IO ()
 main = do
@@ -318,16 +318,16 @@ main = do
 
 | Function    | Description                    | Signature                                |
 | ----------- | ------------------------------ | ---------------------------------------- |
-| `union`     | union of two miniframes        | `Miniframe -> Miniframe -> Miniframe`    |
-| `diff`      | difference of two miniframes   | `Miniframe -> Miniframe -> Miniframe`    |
-| `intersect` | intersection of two miniframes | `Miniframe -> Miniframe -> Miniframe`    |
-| `project`   | project a miniframe            | `[Name] -> Miniframe -> Miniframe`       |
-| `rename`    | rename a column                | `Name -> Name -> Miniframe -> Miniframe` |
+| `union`     | union of two miniframes        | `MiniFrame -> MiniFrame -> MiniFrame`    |
+| `diff`      | difference of two miniframes   | `MiniFrame -> MiniFrame -> MiniFrame`    |
+| `intersect` | intersection of two miniframes | `MiniFrame -> MiniFrame -> MiniFrame`    |
+| `project`   | project a miniframe            | `[Name] -> MiniFrame -> MiniFrame`       |
+| `rename`    | rename a column                | `Name -> Name -> MiniFrame -> MiniFrame` |
 
 Example usage:
 
 ```haskell
-import Miniframe
+import MiniFrame
 import Relational
 
 main :: IO ()
@@ -348,14 +348,14 @@ This means that we can use the built-in list manipulation functions
 directly.
 
 ```haskell
-import Miniframe
+import MiniFrame
 
 main :: IO ()
 main = do
     let miniframe = fromRows
 
                    -- Name
-                   "Miniframe with numeric data"
+                   "MiniFrame with numeric data"
 
                    -- Header
                    ["Product","Company","Value"]

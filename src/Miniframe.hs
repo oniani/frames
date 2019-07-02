@@ -1,5 +1,5 @@
 {- |
-Module      :  Miniframe.hs
+Module      :  MiniFrame.hs
 Description :  Minimal data frames
 Copyright   :  (c) David Oniani
 License     :  GNU General Public License v3.0
@@ -11,46 +11,46 @@ Portability :  portable
 An implementation of a data frame which comes with various handy operations.
 -}
 
-module Miniframe
+module MiniFrame
     (
     -- Data types
-      Miniframe (..)
+      MiniFrame (..)
     , Name
     , Header
     , Row
     , Column
 
     -- Construction
-    , fromSample          -- Miniframe
-    , fromNull            -- Miniframe
-    , fromRows            -- Name -> Header -> [Row] -> Miniframe
-    , fromColumns         -- Name -> Header -> [Column] -> Miniframe
-    , fromCSV             -- String -> IO Miniframe
+    , fromSample          -- MiniFrame
+    , fromNull            -- MiniFrame
+    , fromRows            -- Name -> Header -> [Row] -> MiniFrame
+    , fromColumns         -- Name -> Header -> [Column] -> MiniFrame
+    , fromCSV             -- String -> IO MiniFrame
 
     -- Retrieval
-    , nameOf              -- Miniframe -> Name
-    , headerOf            -- Miniframe -> Header
-    , rowsOf              -- Miniframe -> [Row]
-    , columnsOf           -- Miniframe -> [Column]
-    , headOf              -- Miniframe -> Row
-    , tailOf              -- Miniframe -> [Row]
+    , nameOf              -- MiniFrame -> Name
+    , headerOf            -- MiniFrame -> Header
+    , rowsOf              -- MiniFrame -> [Row]
+    , columnsOf           -- MiniFrame -> [Column]
+    , headOf              -- MiniFrame -> Row
+    , tailOf              -- MiniFrame -> [Row]
 
     -- Dimensions
-    , rowsNum             -- Miniframe -> Int
-    , columnsNum          -- Miniframe -> Int
-    , entriesNum          -- Miniframe -> Int
+    , rowsNum             -- MiniFrame -> Int
+    , columnsNum          -- MiniFrame -> Int
+    , entriesNum          -- MiniFrame -> Int
 
     -- Modification
-    , prependRow          -- Row -> Miniframe -> Miniframe
-    , prependColumn       -- Name -> Column -> Miniframe -> Miniframe
-    , appendRow           -- Row -> Miniframe -> Miniframe
-    , appendColumn        -- Name -> Column -> Miniframe -> Miniframe
-    , insertRow           -- Index -> Row -> Miniframe -> Miniframe
-    , insertColumn        -- Name -> Name -> Column -> Miniframe -> Miniframe
+    , prependRow          -- Row -> MiniFrame -> MiniFrame
+    , prependColumn       -- Name -> Column -> MiniFrame -> MiniFrame
+    , appendRow           -- Row -> MiniFrame -> MiniFrame
+    , appendColumn        -- Name -> Column -> MiniFrame -> MiniFrame
+    , insertRow           -- Index -> Row -> MiniFrame -> MiniFrame
+    , insertColumn        -- Name -> Name -> Column -> MiniFrame -> MiniFrame
 
     -- Removal
-    , removeRowByIndex    -- Index -> Miniframe -> Miniframe
-    , removeColumnByName  -- Name -> Miniframe -> Miniframe
+    , removeRowByIndex    -- Index -> MiniFrame -> MiniFrame
+    , removeColumnByName  -- Name -> MiniFrame -> MiniFrame
 
     -- Conversion
     , toInt               -- Column -> [Int]
@@ -59,19 +59,19 @@ module Miniframe
     , toBigDecimal        -- Column -> [Double]
 
     -- Pretty-printing
-    , printName           -- Miniframe -> IO ()
-    , printHeader         -- Miniframe -> IO ()
-    , printRow            -- Index -> Miniframe -> IO ()
-    , printRows           -- Miniframe -> IO ()
-    , printColumn         -- Name -> Miniframe -> IO ()
-    , printColumns        -- Miniframe -> IO ()
-    , printMf             -- Miniframe -> IO ()
+    , printName           -- MiniFrame -> IO ()
+    , printHeader         -- MiniFrame -> IO ()
+    , printRow            -- Index -> MiniFrame -> IO ()
+    , printRows           -- MiniFrame -> IO ()
+    , printColumn         -- Name -> MiniFrame -> IO ()
+    , printColumns        -- MiniFrame -> IO ()
+    , printMF             -- MiniFrame -> IO ()
 
     -- Additional operations
-    , rowByIndex          -- Index -> Miniframe -> Row
-    , columnByName        -- Name -> Miniframe -> Column
-    , columnByIndex       -- Index -> Miniframe -> Column
-    , renameMf            -- Name -> Miniframe -> Miniframe
+    , rowByIndex          -- Index -> MiniFrame -> Row
+    , columnByName        -- Name -> MiniFrame -> Column
+    , columnByIndex       -- Index -> MiniFrame -> Column
+    , renameMf            -- Name -> MiniFrame -> MiniFrame
     ) where
 
 import Data.Char (isDigit)
@@ -88,10 +88,10 @@ type Header = [Name]
 type Row    = [String]
 type Column = [String]
 
-data Miniframe = Miniframe
-    { name   :: !Name     -- Name of the Miniframe
-    , header :: !Header   -- Header columns of the Miniframe
-    , rows   :: ![Row]    -- Rows of the Miniframe
+data MiniFrame = MiniFrame
+    { name   :: !Name     -- Name of the MiniFrame
+    , header :: !Header   -- Header columns of the MiniFrame
+    , rows   :: ![Row]    -- Rows of the MiniFrame
     } deriving (Eq, Show)
 
 -------------------------------------------------------------------------------
@@ -99,10 +99,10 @@ data Miniframe = Miniframe
 -------------------------------------------------------------------------------
 
 -- | A sample miniframe
-fromSample :: Miniframe
-fromSample = Miniframe n h rs
+fromSample :: MiniFrame
+fromSample = MiniFrame n h rs
   where
-    n  = "Miniframe"
+    n  = "MiniFrame"
     h  = ["C1","C2","C3","C4"]
     rs = [ ["R1-C1","R1-C2","R1-C3","R1-C4"]
          , ["R2-C1","R2-C2","R2-C3","R2-C4"]
@@ -115,71 +115,72 @@ fromSample = Miniframe n h rs
          ]
 
 -- | Built an empty miniframe
-fromNull :: Miniframe
-fromNull = Miniframe "" [] []
+fromNull :: MiniFrame
+fromNull = MiniFrame "" [] []
 
 -- | Build from rows
-fromRows :: Name -> Header -> [Row] -> Miniframe
+fromRows :: Name -> Header -> [Row] -> MiniFrame
 fromRows n h rs
-    | ordNub h /= h = error "Duplicate header names"
-    | otherwise     = Miniframe n h rs
+    | ordNub h /= h = error "Duplicates column name"
+    | otherwise     = MiniFrame n h rs
 
 -- | Build from columns
-fromColumns :: Name -> Header -> [Column] -> Miniframe
+fromColumns :: Name -> Header -> [Column] -> MiniFrame
 fromColumns n h cs
-    | ordNub h /= h = error "Duplicate header names"
-    | otherwise     = Miniframe n h $ List.transpose cs
+    | ordNub h /= h = error "Duplicate column name"
+    | otherwise     = MiniFrame n h $ List.transpose cs
 
 -- | Build from the CSV file
-fromCSV :: String -> IO Miniframe
+fromCSV :: String -> IO MiniFrame
 fromCSV fn = do
     csv <- readCSV fn
     let h  = head csv
     let rs = tail csv
-    return (Miniframe "Miniframe" h rs)
+    if h /= ordNub h then error "Duplicate column name"
+    else return (MiniFrame "MiniFrame" h rs)
 
 -------------------------------------------------------------------------------
 -- Retrieval
 -------------------------------------------------------------------------------
 
 -- | Get the name
-nameOf :: Miniframe -> Name
-nameOf (Miniframe n _ _ ) = n
+nameOf :: MiniFrame -> Name
+nameOf (MiniFrame n _ _ ) = n
 
 -- | Get the header
-headerOf :: Miniframe -> Header
-headerOf (Miniframe _ h _ ) = h
+headerOf :: MiniFrame -> Header
+headerOf (MiniFrame _ h _ ) = h
 
 -- | Get the rows
-rowsOf :: Miniframe -> [Row]
-rowsOf (Miniframe _ _ rs ) = rs
+rowsOf :: MiniFrame -> [Row]
+rowsOf (MiniFrame _ _ rs ) = rs
 
 -- | Get the columns
-columnsOf :: Miniframe -> [Column]
-columnsOf (Miniframe _ _ rs) = List.transpose rs
+columnsOf :: MiniFrame -> [Column]
+columnsOf (MiniFrame _ _ rs) = List.transpose rs
 
 -- | Get the first entry
-headOf :: Miniframe -> Row
-headOf (Miniframe _ _ rs) = head rs
+headOf :: MiniFrame -> Row
+headOf (MiniFrame _ _ rs) = head rs
 
 -- | Get the last entry
-tailOf :: Miniframe -> [Row]
-tailOf (Miniframe _ _ rs) = tail rs
+tailOf :: MiniFrame -> [Row]
+tailOf (MiniFrame _ _ rs) = tail rs
 
 -------------------------------------------------------------------------------
 -- Dimensions
 -------------------------------------------------------------------------------
 
 -- | Get the number of rows
-rowsNum :: Miniframe -> Int
-rowsNum (Miniframe _ _ rs) = length rs
+rowsNum :: MiniFrame -> Int
+rowsNum (MiniFrame _ _ rs) = length rs
 
 -- | Get the number of columns
-columnsNum :: Miniframe -> Int
-columnsNum (Miniframe _ _ rs) = length $ List.transpose rs
+columnsNum :: MiniFrame -> Int
+columnsNum (MiniFrame _ _ rs) = length $ List.transpose rs
 
 -- | Get the number of entries
-entriesNum :: Miniframe -> Int
+entriesNum :: MiniFrame -> Int
 entriesNum mf = rowsNum mf * columnsNum mf
 
 -------------------------------------------------------------------------------
@@ -187,70 +188,70 @@ entriesNum mf = rowsNum mf * columnsNum mf
 -------------------------------------------------------------------------------
 
 -- | Add a row to the beginning
-prependRow :: Row -> Miniframe -> Miniframe
-prependRow nr (Miniframe n h rs)
-    | not (null rs) && length nr /= length (head rs) = error "Incompatible row size"
-    | otherwise                                      = Miniframe n h (nr : rs)
+prependRow :: Row -> MiniFrame -> MiniFrame
+prependRow r (MiniFrame n h rs)
+    | not (null rs) && length r /= length (head rs) = error "Incompatible row size"
+    | otherwise                                     = MiniFrame n h (r : rs)
 
 -- | Add a column to the beginning
-prependColumn :: Name -> Column -> Miniframe -> Miniframe
-prependColumn ncn nc (Miniframe n h rs)
-    | not (null rs) && length nc /= length rs = error "Incompatible column size"
-    | otherwise                                 = Miniframe n nh nrs
+prependColumn :: Name -> Column -> MiniFrame -> MiniFrame
+prependColumn cn c (MiniFrame n h rs)
+    | not (null rs) && length c /= length rs = error "Incompatible column size"
+    | otherwise                              = MiniFrame n nh nrs
       where
-        nh  = ncn : h
-        nrs = List.transpose (nc : List.transpose rs)
+        nh  = cn : h
+        nrs = List.transpose (c : List.transpose rs)
 
 -- | Add a row to the end
-appendRow :: Row -> Miniframe -> Miniframe
-appendRow nr (Miniframe n h rs)
-    | not (null rs) && length nr /= length (head rs) = error "Incompatible row size"
-    | otherwise                                      = Miniframe n h (rs ++ [nr])
+appendRow :: Row -> MiniFrame -> MiniFrame
+appendRow r (MiniFrame n h rs)
+    | not (null rs) && length r /= length (head rs) = error "Incompatible row size"
+    | otherwise                                     = MiniFrame n h (rs ++ [r])
 
 -- | Add a column to the end
-appendColumn :: Name -> Column -> Miniframe -> Miniframe
-appendColumn ncn nc (Miniframe n h rs)
-    | not (null rs) && length nc /= length rs = error "Incompatible column size"
-    | otherwise                               = Miniframe n nh nrs
+appendColumn :: Name -> Column -> MiniFrame -> MiniFrame
+appendColumn cn c (MiniFrame n h rs)
+    | not (null rs) && length c /= length rs = error "Incompatible column size"
+    | otherwise                              = MiniFrame n nh nrs
       where
-        nh  = h ++ [ncn]
-        nrs = List.transpose (List.transpose rs ++ [nc])
+        nh  = h ++ [cn]
+        nrs = List.transpose (List.transpose rs ++ [c])
 
 -- | Insert a row at the given index
-insertRow :: Index -> Row -> Miniframe -> Miniframe
-insertRow i nr (Miniframe n h rs)
-    | not (null rs) && length nr /= length (head rs) = error "Incompatible row size"
-    | otherwise                                      = Miniframe n h nrs
+insertRow :: Index -> Row -> MiniFrame -> MiniFrame
+insertRow i r (MiniFrame n h rs)
+    | not (null rs) && length r /= length (head rs) = error "Incompatible row size"
+    | otherwise                                     = MiniFrame n h nrs
       where
         srs = splitAt i rs
-        nrs = fst srs ++ [nr] ++ snd srs
+        nrs = fst srs ++ [r] ++ snd srs
 
 -- | Insert a column at the given index (index starts from 0)
-insertColumn :: Index -> Name -> Column -> Miniframe -> Miniframe
-insertColumn i ncn nc (Miniframe n h rs)
-    | length nc /= length rs = error "Incompatible column size"
-    | otherwise              = Miniframe n nh nrs
+insertColumn :: Index -> Name -> Column -> MiniFrame -> MiniFrame
+insertColumn i cn c (MiniFrame n h rs)
+    | length c /= length rs = error "Incompatible column size"
+    | otherwise             = MiniFrame n nh nrs
       where
         srs = splitAt i $ List.transpose rs
-        nrs = List.transpose $ fst srs ++ [nc] ++ snd srs
+        nrs = List.transpose $ fst srs ++ [c] ++ snd srs
         sh  = splitAt i h
-        nh  = fst sh ++ [ncn] ++ snd sh
+        nh  = fst sh ++ [cn] ++ snd sh
 
 -------------------------------------------------------------------------------
 -- Removal
 -------------------------------------------------------------------------------
 
 -- | Remove a row by index
-removeRowByIndex :: Index -> Miniframe -> Miniframe
-removeRowByIndex i mf@(Miniframe n h rs)
-    | i < 0 || i >= length rs = mf
-    | otherwise               = Miniframe n h (take i rs ++ drop (i + 1) rs)
+removeRowByIndex :: Index -> MiniFrame -> MiniFrame
+removeRowByIndex i (MiniFrame n h rs)
+    | i < 0 || i >= length rs = MiniFrame n h rs
+    | otherwise               = MiniFrame n h (take i rs ++ drop (i + 1) rs)
 
 -- | Remove a column by name
-removeColumnByName :: Name -> Miniframe -> Miniframe
-removeColumnByName cn mf@(Miniframe n h rs)
-    | cn `elem` h = Miniframe n nh nrs
-    | otherwise   = mf
+removeColumnByName :: Name -> MiniFrame -> MiniFrame
+removeColumnByName cn (MiniFrame n h rs)
+    | cn `elem` h = MiniFrame n nh nrs
+    | otherwise   = MiniFrame n h rs
     where
       nh  = List.delete cn h
       i   = Maybe.fromJust $ List.elemIndex cn h
@@ -289,32 +290,32 @@ toBigDecimal c
 -------------------------------------------------------------------------------
 
 -- | Print the name
-printName :: Miniframe -> IO ()
+printName :: MiniFrame -> IO ()
 printName mf = coloredPutStrLn $ nameOf mf
 
 -- | Print the header
-printHeader :: Miniframe -> IO ()
+printHeader :: MiniFrame -> IO ()
 printHeader mf = prettyPrint1D $ headerOf mf
 
 -- | Print the row by index
-printRow :: Index -> Miniframe -> IO ()
+printRow :: Index -> MiniFrame -> IO ()
 printRow i mf = prettyPrint2D [rowByIndex i mf]
 
 -- | Print the rows
-printRows :: Miniframe -> IO ()
+printRows :: MiniFrame -> IO ()
 printRows mf = prettyPrint2D $ rowsOf mf
 
 -- | Print the column by name
-printColumn :: Name -> Miniframe -> IO ()
+printColumn :: Name -> MiniFrame -> IO ()
 printColumn n mf = prettyPrint1DV $ columnByName n mf
 
 -- | Print the columns
-printColumns :: Miniframe -> IO ()
+printColumns :: MiniFrame -> IO ()
 printColumns mf = prettyPrint2D $ rowsOf mf
 
 -- | Print the miniframe
-printMf :: Miniframe -> IO ()
-printMf (Miniframe n h rs) = do
+printMF :: MiniFrame -> IO ()
+printMF (MiniFrame n h rs) = do
     coloredPutStrLn $ n ++ "\n"
     prettyPrint2D   $ nh : nrs
     where
@@ -326,25 +327,25 @@ printMf (Miniframe n h rs) = do
 -------------------------------------------------------------------------------
 
 -- | Get a row by index
-rowByIndex :: Index -> Miniframe -> Row
-rowByIndex i (Miniframe _ _ rs)
+rowByIndex :: Index -> MiniFrame -> Row
+rowByIndex i (MiniFrame _ _ rs)
     | i < 0 || i >= length rs = error "Index out of bounds"
     | otherwise               = rs !! i
 
 -- | Get a column by name
-columnByName :: Name -> Miniframe -> Column
-columnByName cn (Miniframe _ h rs)
+columnByName :: Name -> MiniFrame -> Column
+columnByName cn (MiniFrame _ h rs)
     | cn `notElem` h = error "Unknown column name"
     | otherwise      = List.transpose rs !! i
       where
         i = Maybe.fromJust $ List.elemIndex cn h
 
 -- | Get the column by index
-columnByIndex :: Index -> Miniframe -> Column
-columnByIndex i (Miniframe _ _ rs)
+columnByIndex :: Index -> MiniFrame -> Column
+columnByIndex i (MiniFrame _ _ rs)
     | i < 0 || i >= length (List.transpose rs) = error "Index out of bounds"
     | otherwise                                = List.transpose rs !! i
 
 -- | Rename the miniframe
-renameMf :: Name -> Miniframe -> Miniframe
-renameMf nn (Miniframe _ h rs) = Miniframe nn h rs
+renameMf :: Name -> MiniFrame -> MiniFrame
+renameMf n (MiniFrame _ h rs) = MiniFrame n h rs

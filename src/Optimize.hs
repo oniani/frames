@@ -22,6 +22,7 @@ module Optimize
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
+-- O(n log n)
 ordNub :: (Ord a) => [a] -> [a]
 ordNub = go Set.empty
   where
