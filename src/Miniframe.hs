@@ -74,10 +74,12 @@ module MiniFrame
     , renameMf            -- Name -> MiniFrame -> MiniFrame
     ) where
 
-import Data.Char (isDigit)
-import Optimize  (ordNub)
+import Control.Monad (when)
+import Data.Char     (isDigit)
+import Optimize      (ordNub)
 import Parse
 import PrettyPrint
+import Util
 
 import qualified Data.List  as List
 import qualified Data.Maybe as Maybe
@@ -121,23 +123,39 @@ fromNull = MiniFrame "" [] []
 -- | Build from rows
 fromRows :: Name -> Header -> [Row] -> MiniFrame
 fromRows n h rs
-    | ordNub h /= h = error "Duplicates column name"
-    | otherwise     = MiniFrame n h rs
+    | constraintsRow n h rs  == "NoKnownError" = MiniFrame n h rs
+    | otherwise                                = error "Unknown error"
 
 -- | Build from columns
 fromColumns :: Name -> Header -> [Column] -> MiniFrame
 fromColumns n h cs
-    | ordNub h /= h = error "Duplicate column name"
-    | otherwise     = MiniFrame n h $ List.transpose cs
+    | constraintsColumn n h cs  == "NoKnownError" = MiniFrame n h (List.transpose cs)
+    | otherwise                                   = error "Unknown error"
 
 -- | Build from the CSV file
 fromCSV :: String -> IO MiniFrame
 fromCSV fn = do
     csv <- readCSV fn
+
     let h  = head csv
     let rs = tail csv
-    if h /= ordNub h then error "Duplicate column name"
-    else return (MiniFrame "MiniFrame" h rs)
+
+    when (null h) $
+        error "Empty header"
+
+    when (ordNub h /= h) $
+        error "Duplicate column name"
+
+    when (null rs) $
+        error "Empty rows"
+
+    when (any null rs) $
+        error "Empty row"
+
+    when (False `elem` map ((== (length . head) rs) . length) rs) $
+        error "Row size mismatch"
+
+    return (MiniFrame "MiniFrame" h rs)
 
 -------------------------------------------------------------------------------
 -- Retrieval
@@ -221,6 +239,7 @@ appendColumn cn c (MiniFrame n h rs)
 insertRow :: Index -> Row -> MiniFrame -> MiniFrame
 insertRow i r (MiniFrame n h rs)
     | not (null rs) && length r /= length (head rs) = error "Incompatible row size"
+    | i < 0 || i > length rs                        = error "Index out of bounds"
     | otherwise                                     = MiniFrame n h nrs
       where
         srs = splitAt i rs
@@ -229,8 +248,9 @@ insertRow i r (MiniFrame n h rs)
 -- | Insert a column at the given index (index starts from 0)
 insertColumn :: Index -> Name -> Column -> MiniFrame -> MiniFrame
 insertColumn i cn c (MiniFrame n h rs)
-    | length c /= length rs = error "Incompatible column size"
-    | otherwise             = MiniFrame n nh nrs
+    | length c /= length rs         = error "Incompatible column size"
+    | i < 0 || i > length (head rs) = error "Index out of bounds"
+    | otherwise                     = MiniFrame n nh nrs
       where
         srs = splitAt i $ List.transpose rs
         nrs = List.transpose $ fst srs ++ [c] ++ snd srs

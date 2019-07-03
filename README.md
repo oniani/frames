@@ -38,9 +38,9 @@ Its definition is shown below.
 
 ```haskell
 data MiniFrame = MiniFrame
-    { _name   :: !Name     -- Name
-    , _header :: !Header   -- Header
-    , _rows   :: ![Row] }  -- Rows
+    { name   :: !Name     -- Name
+    , header :: !Header   -- Header
+    , rows   :: ![Row] }  -- Rows
     deriving (Eq, Show)
 ```
 

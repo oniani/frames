@@ -3,7 +3,7 @@ name:                  miniframe
 category:              Data
 version:               1.0
 license:               GPL-3.0-only
-license-file:          LICENSE.md
+license-file:          LICENSE
 author:                David Oniani
 maintainer:            David Oniani <onianidavid@gmail.com>
 stability:             experimental
@@ -23,7 +23,7 @@ library
 
 test-suite spec
   default-language:    Haskell2010
-  ghc-options:         -Wall -Werror
+  ghc-options:         -Wall
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs

@@ -3,7 +3,6 @@ This is a test file for the MiniFrame.hs module.
 Run 'cabal test' for running the tests.
 -}
 
-{-# OPTIONS_GHC -fno-warn-orphans      #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE GADTSyntax                #-}
 {-# LANGUAGE FlexibleContexts          #-}
@@ -16,16 +15,16 @@ import System.Exit               (exitFailure)
 import Control.Monad             (unless)
 import Test.QuickCheck.Test      (quickCheckResult, isSuccess)
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-
+import Control.Applicative       ((<$>))
 import MiniFrame
 
 import qualified Data.List as List
 
 instance Arbitrary MiniFrame where
-    arbitrary = do  a <- arbitrary
-                    b <- arbitrary
-                    c <- arbitrary
-                    return $ MiniFrame a b c
+    arbitrary = do
+        a <- arbitrary
+        b <- arbitrary
+        MiniFrame a b <$> arbitrary
 
 -------------------------------------------------------------------------------
 
@@ -48,67 +47,69 @@ prop_fromNull :: Bool
 prop_fromNull = fromNull == MiniFrame "" [] []
 
 prop_fromRows :: Name -> Header -> [Row] -> Bool
-prop_fromRows tn th trs
-    | th /= List.nub th                             = True  -- Bypass
-    | th == List.nub th && mf == fromRows tn th trs = True
-    | otherwise                                     = False
+prop_fromRows n h rs
+    | h /= List.nub h                          = True  -- Bypass
+    | h == List.nub h && mf == fromRows n h rs = True
+    | otherwise                                = False
     where
-        mf = MiniFrame tn th trs
+        mf = MiniFrame n h rs
 
 prop_fromColumns :: Name -> Header -> [Row] -> Bool
-prop_fromColumns tn th trs
-    | th /= List.nub th                                = True  -- Bypass
-    | th == List.nub th && mf == fromColumns tn th trs = True
-    | otherwise                                        = False
+prop_fromColumns n h rs
+    | h /= List.nub h                             = True  -- Bypass
+    | h == List.nub h && mf == fromColumns n h rs = True
+    | otherwise                                   = False
     where
-        mf = MiniFrame tn th (List.transpose trs)
+        mf = MiniFrame n h (List.transpose rs)
 
 prop_nameOf :: MiniFrame -> Bool
-prop_nameOf tmf@(MiniFrame tn _ _) = tn == nameOf tmf
+prop_nameOf mf@(MiniFrame n _ _) = n == nameOf mf
 
 prop_headerOf :: MiniFrame -> Bool
-prop_headerOf tmf@(MiniFrame _ th _) = th == headerOf tmf
+prop_headerOf mf@(MiniFrame _ h _) = h == headerOf mf
 
 prop_rowsOf :: MiniFrame -> Bool
-prop_rowsOf tmf@(MiniFrame _ _ trs) = trs == rowsOf tmf
+prop_rowsOf mf@(MiniFrame _ _ rs) = rs == rowsOf mf
 
 prop_rowsNum :: MiniFrame -> Bool
-prop_rowsNum tmf = length (rowsOf tmf) == rowsNum tmf
+prop_rowsNum mf = length (rowsOf mf) == rowsNum mf
 
 prop_columnsNum :: MiniFrame -> Bool
-prop_columnsNum tmf = length (columnsOf tmf) == columnsNum tmf
+prop_columnsNum mf = length (columnsOf mf) == columnsNum mf
 
 -- If rowsNum and columnsNum are fine, this should be fine too
 prop_entriesNum :: MiniFrame -> Bool
-prop_entriesNum tmf = rowsNum tmf * columnsNum tmf == entriesNum tmf
-
--- Helper function
-cond :: Row -> MiniFrame -> Bool
-cond tr tmf = null tr || null (rowsOf tmf) || length tr /= (length . head . rowsOf) tmf
+prop_entriesNum mf = rowsNum mf * columnsNum mf == entriesNum mf
 
 prop_prependRow :: MiniFrame -> Row -> Bool
-prop_prependRow tmf tr
-    | cond tr tmf = True
-    | otherwise   = rowsOf (prependRow tr tmf) == tr : rowsOf tmf
+prop_prependRow mf r
+    | null r || null (rowsOf mf) || length r /= (length . head . rowsOf) mf = True
+    | otherwise                                                             = rowsOf (prependRow r mf) == r : rowsOf mf
 
 prop_prependColumn :: Name -> Column -> MiniFrame -> Bool
-prop_prependColumn tn tc tmf
-    | not (null $ rowsOf tmf) && length tc /= length (rowsOf tmf)     = True
-    | otherwise                                                       = headerOf ntmf == tn : headerOf tmf && columnsOf ntmf == tc : columnsOf tmf
+prop_prependColumn cn c mf
+    | not (null $ rowsOf mf) && length c /= length (rowsOf mf) = True
+    | otherwise                                                = cond
       where
-        ntmf = prependColumn tn tc tmf
+        cond  = cond1 && cond2
+        nmf   = prependColumn cn c mf
+        cond1 = headerOf nmf == cn : headerOf mf
+        cond2 = rowsOf   nmf == List.transpose (c : List.transpose (rowsOf mf))
 
 prop_appendRow :: MiniFrame -> Row -> Bool
-prop_appendRow tmf tr
-    | cond tr tmf = True
-    | otherwise   = rowsOf (appendRow tr tmf) == rowsOf tmf ++ [tr]
+prop_appendRow mf r
+    | null r || null (rowsOf mf) || length r /= (length . head . rowsOf) mf = True
+    | otherwise                                                             = rowsOf (appendRow r mf) == rowsOf mf ++ [r]
 
--- Modification
--- , appendRow           -- Row -> MiniFrame -> MiniFrame
--- , appendColumn        -- Name -> Column -> MiniFrame -> MiniFrame
--- , insertRow           -- Index -> Row -> MiniFrame -> MiniFrame
--- , insertColumn        -- Name -> Name -> Column -> MiniFrame -> MiniFrame
-
+prop_appendColumn :: Name -> Column -> MiniFrame -> Bool
+prop_appendColumn cn c mf
+    | not (null $ rowsOf mf) && length c /= length (rowsOf mf) = True
+    | otherwise                                                = cond
+      where
+        cond  = cond1 && cond2
+        nmf   = appendColumn cn c mf
+        cond1 = headerOf nmf == headerOf mf ++ [cn]
+        cond2 = rowsOf   nmf == List.transpose (List.transpose (rowsOf mf) ++ [c])
 
 -------------------------------------------------------------------------------
 
@@ -130,6 +131,7 @@ main = do
                 , quickCheckResult prop_prependRow
                 , quickCheckResult prop_prependColumn
                 , quickCheckResult prop_appendRow
+                , quickCheckResult prop_appendColumn
                 ]
 
     success <- all isSuccess <$> sequence tests
