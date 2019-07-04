@@ -52,12 +52,6 @@ module MiniFrame
     , removeRowByIndex    -- Index -> MiniFrame -> MiniFrame
     , removeColumnByName  -- Name -> MiniFrame -> MiniFrame
 
-    -- Conversion
-    , toInt               -- Column -> [Int]
-    , toDecimal           -- Column -> [Float]
-    , toBigInt            -- Column -> [Integer]
-    , toBigDecimal        -- Column -> [Double]
-
     -- Pretty-printing
     , printName           -- MiniFrame -> IO ()
     , printHeader         -- MiniFrame -> IO ()
@@ -72,6 +66,13 @@ module MiniFrame
     , columnByName        -- Name -> MiniFrame -> Column
     , columnByIndex       -- Index -> MiniFrame -> Column
     , renameMf            -- Name -> MiniFrame -> MiniFrame
+
+    -- Conversion
+    , toInt               -- Column -> MiniFrame -> [Int]
+    , toDecimal           -- Column -> MiniFrame -> [Float]
+    , toBigInt            -- Column -> MiniFrame -> [Integer]
+    , toBigDecimal        -- Column -> MiniFrame -> [Double]
+
     ) where
 
 import Data.Char (isDigit)
@@ -241,46 +242,18 @@ insertColumn i cn c (MiniFrame n h rs)
 -- | Remove a row by index
 removeRowByIndex :: Index -> MiniFrame -> MiniFrame
 removeRowByIndex i (MiniFrame n h rs)
-    | i < 0 || i > length rs = MiniFrame n h rs
+    | i < 0 || i > length rs = error "Index out of bounds"
     | otherwise              = MiniFrame n h (take i rs ++ drop (i + 1) rs)
 
 -- | Remove a column by name
 removeColumnByName :: Name -> MiniFrame -> MiniFrame
 removeColumnByName cn (MiniFrame n h rs)
     | cn `elem` h = MiniFrame n nh nrs
-    | otherwise   = MiniFrame n h rs
+    | otherwise   = error "Unknown column name"
     where
       nh  = List.delete cn h
       i   = Maybe.fromJust $ List.elemIndex cn h
       nrs = List.transpose $ take i (List.transpose rs) ++ drop (i + 1) (List.transpose rs)
-
--------------------------------------------------------------------------------
--- Conversion
--------------------------------------------------------------------------------
-
--- | Convert a column of strings to a column of integers
-toInt :: Column -> [Int]
-toInt c
-    | all (all isDigit) c = map (\n -> read n :: Int) c
-    | otherwise           = error "Non-integer value in the column"
-
--- | Convert a column of strings to a column of decimals
-toDecimal :: Column -> [Float]
-toDecimal c
-    | all (all isDigit) $ map (filter (/='.')) c = map (\n -> read n :: Float) c
-    | otherwise                                  = error "Non-decimal value in the column"
-
--- | Convert a column of strings to a column of big integers
-toBigInt :: Column -> [Integer]
-toBigInt c
-    | all (all isDigit) c = map (\n -> read n :: Integer) c
-    | otherwise           = error "Non-integer value in the column"
-
--- | Convert a column of strings to a column of big decimals
-toBigDecimal :: Column -> [Double]
-toBigDecimal c
-    | all (all isDigit) $ map (filter (/='.')) c = map (\n -> read n :: Double) c
-    | otherwise                                  = error "Non-decimal value in the column"
 
 -------------------------------------------------------------------------------
 -- Pretty-printing
@@ -346,3 +319,39 @@ columnByIndex i (MiniFrame _ _ rs)
 -- | Rename the miniframe
 renameMf :: Name -> MiniFrame -> MiniFrame
 renameMf n (MiniFrame _ h rs) = MiniFrame n h rs
+
+-------------------------------------------------------------------------------
+-- Conversion
+-------------------------------------------------------------------------------
+
+-- | Convert a column of strings to a column of integers
+toInt :: Name -> MiniFrame -> [Int]
+toInt cn mf
+    | all (all isDigit) c = map (\n -> read n :: Int) c
+    | otherwise           = error "Non-integer value in the column"
+      where
+        c = columnByName cn mf
+
+-- | Convert a column of strings to a column of decimals
+toDecimal :: Name -> MiniFrame -> [Float]
+toDecimal cn mf
+    | all (all isDigit) $ map (filter (/='.')) c = map (\n -> read n :: Float) c
+    | otherwise                                  = error "Non-decimal value in the column"
+      where
+        c = columnByName cn mf
+
+-- | Convert a column of strings to a column of big integers
+toBigInt :: Name -> MiniFrame -> [Integer]
+toBigInt cn mf
+    | all (all isDigit) c = map (\n -> read n :: Integer) c
+    | otherwise           = error "Non-integer value in the column"
+      where
+        c = columnByName cn mf
+
+-- | Convert a column of strings to a column of big decimals
+toBigDecimal :: Name -> MiniFrame -> [Double]
+toBigDecimal cn mf
+    | all (all isDigit) $ map (filter (/='.')) c = map (\n -> read n :: Double) c
+    | otherwise                                  = error "Non-decimal value in the column"
+      where
+        c = columnByName cn mf

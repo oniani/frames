@@ -7,13 +7,14 @@ module Main where
 
 import System.Exit               (exitFailure)
 import Control.Monad             (unless)
+import Control.Applicative       ((<$>), (<*>))
+import Data.Char                 (isDigit)
 import Test.QuickCheck.Test      (quickCheckResult, isSuccess)
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-import Control.Applicative       ((<$>), (<*>))
-import Util
 import MiniFrame
 
 import qualified Data.List as List
+import qualified Data.Maybe as Maybe
 
 instance Arbitrary MiniFrame where
     arbitrary = MiniFrame <$> arbitrary <*> arbitrary <*> arbitrary
@@ -40,19 +41,31 @@ prop_fromNull = fromNull == MiniFrame "" [] []
 
 prop_fromRows :: Name -> Header -> [Row] -> Bool
 prop_fromRows n h rs
-    | h /= List.nub h                          = True  -- Bypass
-    | h == List.nub h && mf == fromRows n h rs = True
-    | otherwise                                = False
+    | null h                                                 = True
+    | length h /= length rs                                  = True
+    | length h /= length (head rs)                           = True
+    | h /= List.nub h                                        = True
+    | null rs                                                = True
+    | any null rs                                            = True
+    | False `elem` map ((== (length . head) rs) . length) rs = True
+    | h == List.nub h && mf == fromRows n h rs               = True
+    | otherwise                                              = False
     where
         mf = MiniFrame n h rs
 
-prop_fromColumns :: Name -> Header -> [Row] -> Bool
-prop_fromColumns n h rs
-    | h /= List.nub h                             = True  -- Bypass
-    | h == List.nub h && mf == fromColumns n h rs = True
-    | otherwise                                   = False
-    where
-        mf = MiniFrame n h (List.transpose rs)
+prop_fromColumns :: Name -> Header -> [Column] -> Bool
+prop_fromColumns n h cs
+    | null h                                                 = True
+    | length h /= length (List.transpose cs)                 = True
+    | length h /= length (head (List.transpose cs))          = True
+    | h /= List.nub h                                        = True
+    | null cs                                                = True
+    | any null cs                                            = True
+    | False `elem` map ((== (length . head) cs) . length) cs = True
+    | h == List.nub h && mf == fromColumns n h cs            = True
+    | otherwise                                              = False
+      where
+        mf = MiniFrame n h (List.transpose cs)
 
 prop_nameOf :: MiniFrame -> Bool
 prop_nameOf mf@(MiniFrame n _ _) = n == nameOf mf
@@ -69,39 +82,96 @@ prop_rowsNum mf = length (rowsOf mf) == rowsNum mf
 prop_columnsNum :: MiniFrame -> Bool
 prop_columnsNum mf = length (columnsOf mf) == columnsNum mf
 
--- If rowsNum and columnsNum are fine, this should be fine too
 prop_entriesNum :: MiniFrame -> Bool
 prop_entriesNum mf = rowsNum mf * columnsNum mf == entriesNum mf
 
-prop_prependRow :: MiniFrame -> Row -> Bool
-prop_prependRow mf r
-    | null r || null (rowsOf mf) || length r /= (length . head . rowsOf) mf = True
-    | otherwise                                                             = rowsOf (prependRow r mf) == r : rowsOf mf
+prop_prependRow :: Row -> MiniFrame -> Bool
+prop_prependRow r mf@(MiniFrame _ _ rs)
+    | null rs                      = True
+    | null . head $ rs             = True
+    | length r /= length (head rs) = True
+    | otherwise                    = rowsOf (prependRow r mf) == r : rs
 
 prop_prependColumn :: Name -> Column -> MiniFrame -> Bool
-prop_prependColumn cn c mf
-    | not (null $ rowsOf mf) && length c /= length (rowsOf mf) = True
-    | otherwise                                                = cond
+prop_prependColumn cn c mf@(MiniFrame _ h rs)
+    | length c /= length rs = True
+    | otherwise             = cond
       where
         cond  = cond1 && cond2
         nmf   = prependColumn cn c mf
-        cond1 = headerOf nmf == cn : headerOf mf
-        cond2 = rowsOf   nmf == List.transpose (c : List.transpose (rowsOf mf))
+        cond1 = headerOf nmf == cn : h
+        cond2 = rowsOf   nmf == List.transpose (c : List.transpose rs)
 
-prop_appendRow :: MiniFrame -> Row -> Bool
-prop_appendRow mf r
-    | null r || null (rowsOf mf) || length r /= (length . head . rowsOf) mf = True
-    | otherwise                                                             = rowsOf (appendRow r mf) == rowsOf mf ++ [r]
+prop_appendRow :: Row -> MiniFrame -> Bool
+prop_appendRow r mf@(MiniFrame _ _ rs)
+    | null rs                      = True
+    | null . head $ rs             = True
+    | length r /= length (head rs) = True
+    | otherwise                    = rowsOf (appendRow r mf) == rs ++ [r]
 
 prop_appendColumn :: Name -> Column -> MiniFrame -> Bool
-prop_appendColumn cn c mf
-    | not (null $ rowsOf mf) && length c /= length (rowsOf mf) = True
-    | otherwise                                                = cond
+prop_appendColumn cn c mf@(MiniFrame _ h rs)
+    | length c /= length rs = True
+    | otherwise             = cond
       where
         cond  = cond1 && cond2
         nmf   = appendColumn cn c mf
-        cond1 = headerOf nmf == headerOf mf ++ [cn]
-        cond2 = rowsOf   nmf == List.transpose (List.transpose (rowsOf mf) ++ [c])
+        cond1 = headerOf nmf == h ++ [cn]
+        cond2 = rowsOf   nmf == List.transpose (List.transpose rs ++ [c])
+
+prop_removeRowByIndex :: Int -> MiniFrame -> Bool
+prop_removeRowByIndex i mf@(MiniFrame n h rs)
+    | i < 0 || i > length rs = True
+    | otherwise              = MiniFrame n h (take i rs ++ drop (i + 1) rs) == removeRowByIndex i mf
+
+prop_removeColumnByName :: String -> MiniFrame -> Bool
+prop_removeColumnByName cn mf@(MiniFrame n h rs)
+    | cn `elem` h = MiniFrame n nh nrs == removeColumnByName cn mf
+    | otherwise   = True
+    where
+      nh  = List.delete cn h
+      i   = Maybe.fromJust $ List.elemIndex cn h
+      nrs = List.transpose $ take i (List.transpose rs) ++ drop (i + 1) (List.transpose rs)
+
+-- | Property is that we can use the sum and foldr with numeric parameters
+prop_toInt :: String -> MiniFrame -> Bool
+prop_toInt cn mf
+    | cn `notElem` headerOf mf = True
+    | all (all isDigit) c      = sum il + 1 == foldr (+) 1 il
+    | otherwise                = True
+      where
+        il = toInt cn mf
+        c  = columnByName cn mf
+
+-- | Property is that we can use the sum and foldr with numeric parameters
+prop_toDecimal :: String -> MiniFrame -> Bool
+prop_toDecimal cn mf
+    | cn `notElem` headerOf mf                   = True
+    | all (all isDigit) $ map (filter (/='.')) c = sum dl + 1 == foldr (+) 1 dl
+    | otherwise                                  = True
+      where
+        dl = toDecimal cn mf
+        c  = columnByName cn mf
+
+-- | Property is that we can use the sum and foldr with numeric parameters
+prop_toBigInt :: String -> MiniFrame -> Bool
+prop_toBigInt cn mf
+    | cn `notElem` headerOf mf = True
+    | all (all isDigit) c      = sum bil + 1 == foldr (+) 1 bil
+    | otherwise                = True
+      where
+        bil = toBigInt cn mf
+        c   = columnByName cn mf
+
+-- | Property is that we can use the sum and foldr with numeric parameters
+prop_toBigDecimal :: String -> MiniFrame -> Bool
+prop_toBigDecimal cn mf
+    | cn `notElem` headerOf mf = True
+    | all (all isDigit) $ map (filter (/='.')) c = sum bdl + 1 == foldr (+) 1 bdl
+    | otherwise                = True
+      where
+        bdl = toBigDecimal cn mf
+        c   = columnByName cn mf
 
 -------------------------------------------------------------------------------
 
@@ -124,6 +194,14 @@ main = do
                 , quickCheckResult prop_prependColumn
                 , quickCheckResult prop_appendRow
                 , quickCheckResult prop_appendColumn
+                --
+                , quickCheckResult prop_removeRowByIndex
+                , quickCheckResult prop_removeColumnByName
+                --
+                , quickCheckResult prop_toInt
+                , quickCheckResult prop_toDecimal
+                , quickCheckResult prop_toBigInt
+                , quickCheckResult prop_toBigDecimal
                 ]
 
     success <- all isSuccess <$> sequence tests
