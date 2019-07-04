@@ -15,16 +15,13 @@ import System.Exit               (exitFailure)
 import Control.Monad             (unless)
 import Test.QuickCheck.Test      (quickCheckResult, isSuccess)
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-import Control.Applicative       ((<$>))
+import Control.Applicative       ((<$>), (<*>))
 import MiniFrame
 
 import qualified Data.List as List
 
 instance Arbitrary MiniFrame where
-    arbitrary = do
-        a <- arbitrary
-        b <- arbitrary
-        MiniFrame a b <$> arbitrary
+    arbitrary = MiniFrame <$> arbitrary <*> arbitrary <*> arbitrary
 
 -------------------------------------------------------------------------------
 

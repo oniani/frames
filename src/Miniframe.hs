@@ -123,39 +123,24 @@ fromNull = MiniFrame "" [] []
 -- | Build from rows
 fromRows :: Name -> Header -> [Row] -> MiniFrame
 fromRows n h rs
-    | constraintsRow n h rs  == "NoKnownError" = MiniFrame n h rs
-    | otherwise                                = error "Unknown error"
+    | constraintsRow n h rs = MiniFrame n h rs
+    | otherwise             = error "Unknown error"
 
 -- | Build from columns
 fromColumns :: Name -> Header -> [Column] -> MiniFrame
 fromColumns n h cs
-    | constraintsColumn n h cs  == "NoKnownError" = MiniFrame n h (List.transpose cs)
-    | otherwise                                   = error "Unknown error"
+    | constraintsColumn n h cs = MiniFrame n h (List.transpose cs)
+    | otherwise                = error "Unknown error"
 
 -- | Build from the CSV file
 fromCSV :: String -> IO MiniFrame
 fromCSV fn = do
     csv <- readCSV fn
-
     let h  = head csv
     let rs = tail csv
-
-    when (null h) $
-        error "Empty header"
-
-    when (ordNub h /= h) $
-        error "Duplicate column name"
-
-    when (null rs) $
-        error "Empty rows"
-
-    when (any null rs) $
-        error "Empty row"
-
-    when (False `elem` map ((== (length . head) rs) . length) rs) $
-        error "Row size mismatch"
-
-    return (MiniFrame "MiniFrame" h rs)
+    if constraintsRow "MiniFrame" h rs
+    then return (MiniFrame "MiniFrame" h rs)
+    else error "Unknown error"
 
 -------------------------------------------------------------------------------
 -- Retrieval
