@@ -3,12 +3,6 @@ This is a test file for the MiniFrame.hs module.
 Run 'cabal test' for running the tests.
 -}
 
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE GADTSyntax                #-}
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE FlexibleInstances         #-}
-{-# LANGUAGE UndecidableInstances      #-}
-
 module Main where
 
 import System.Exit               (exitFailure)
@@ -16,6 +10,7 @@ import Control.Monad             (unless)
 import Test.QuickCheck.Test      (quickCheckResult, isSuccess)
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Control.Applicative       ((<$>), (<*>))
+import Util
 import MiniFrame
 
 import qualified Data.List as List

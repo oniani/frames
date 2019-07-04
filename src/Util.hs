@@ -18,20 +18,22 @@ module Util
 
 import Optimize
 
-constraintsRow :: String -> [String] -> [[String]] -> Bool
-constraintsRow n h rs
+constraintsRow :: String -> [String] -> [[String]] -> a -> a
+constraintsRow n h rs a
     | null h                                                 = error "Empty header"
+    | length h /= length rs                                  = error "Header size mismatch"
     | ordNub h /= h                                          = error "Duplicate column name"
     | null rs                                                = error "Empty rows"
     | any null rs                                            = error "Empty row"
     | False `elem` map ((== (length . head) rs) . length) rs = error "Row size mismatch"
-    | otherwise                                              = True
+    | otherwise                                              = a
 
-constraintsColumn :: String -> [String] -> [[String]] -> Bool
-constraintsColumn n h cs
+constraintsColumn :: String -> [String] -> [[String]] -> a-> a
+constraintsColumn n h cs a
     | null h                                                 = error "Empty header"
+    | length h /= length rs                                  = error "Header size mismatch"
     | ordNub h /= h                                          = error "Duplicate column name"
     | null cs                                                = error "Empty columns"
     | any null cs                                            = error "Empty column"
     | False `elem` map ((== (length . head) cs) . length) cs = error "Column size mismatch"
-    | otherwise                                              = True
+    | otherwise                                              = a
