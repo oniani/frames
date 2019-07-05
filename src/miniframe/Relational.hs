@@ -11,7 +11,7 @@ Portability :  portable
 Some relational algebra goodness on top of minimal data frames.
 -}
 
-module Relational
+module MiniFrame.Relational
     ( union      -- MiniFrame -> MiniFrame -> MiniFrame
     , diff       -- MiniFrame -> MiniFrame -> MiniFrame
     , intersect  -- MiniFrame -> MiniFrame -> MiniFrame
@@ -23,7 +23,7 @@ module Relational
     , cartprod   -- MiniFrame -> MiniFrame -> MiniFrame
     ) where
 
-import MiniFrame
+import MiniFrame.Frames
 import Optimize
 
 import qualified Data.List  as List

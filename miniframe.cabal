@@ -13,12 +13,31 @@ copyright:             Copyright (C) 2018 David Oniani
 synopsis:              Minimal data frames with relational algebra
 description:           Manipulation of small datasets in the tabular format
 build-type:            Simple
-extra-source-files:    README.md, ChangeLog.md
+extra-source-files:
+  README.md,
+  ChangeLog.md
 
 library
-  exposed-modules:     MiniFrame, Optimize, Parse, PrettyPrint, Relational, Util
-  build-depends:       base, containers, vector, bytestring, cassava, ansi-terminal, boxes
-  hs-source-dirs:      src
+  exposed-modules:
+    MiniFrame,
+    MiniFrame.Frames,
+    MiniFrame.Relational
+  other-modules:
+    Optimize,
+    Parse,
+    PrettyPrint,
+    Util
+  build-depends:
+    base,
+    containers,
+    vector,
+    bytestring,
+    cassava,
+    ansi-terminal,
+    boxes
+  hs-source-dirs:
+    src,
+    src/miniframe
   default-language:    Haskell2010
 
 test-suite spec
@@ -27,4 +46,7 @@ test-suite spec
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
-  build-depends:       base, miniframe, QuickCheck, derive, generic-random
+  build-depends:
+    base,
+    miniframe,
+    QuickCheck

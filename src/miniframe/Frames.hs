@@ -11,7 +11,7 @@ Portability :  portable
 An implementation of a data frame which comes with various handy operations.
 -}
 
-module Frames
+module MiniFrame.Frames
     ( MiniFrame (..)
     , Name
     , Header
@@ -87,9 +87,9 @@ type Row    = [String]
 type Column = [String]
 
 data MiniFrame = MiniFrame
-    { name   :: {-# UNPACK #-} !Name
-    , header :: {-# UNPACK #-} !Header
-    , rows   :: {-# UNPACK #-} ![Row]
+    { name   :: !Name
+    , header :: !Header
+    , rows   :: ![Row]
     } deriving (Eq, Show)
 
 -------------------------------------------------------------------------------
