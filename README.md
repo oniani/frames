@@ -3,7 +3,7 @@
 MiniFrame provides a simple and user-friendly interface for working
 with datasets in a tabular format. The idea of a miniframe comes from
 programming language R's `data.frame` object. MiniFrame is just a very
-stripped down version of R's data frames. It provides just enough power
+stripped down version of R's `data.frame`. It provides just enough power
 and flexibility to conveniently explore the data. The function names as
 well as their functionalities are so simple that even those who are not
 familiar with Haskell can easily use this package for their convenience.
@@ -55,18 +55,6 @@ type Row    = [String]
 type Column = [String]
 ```
 
-**NOTE: For those who are wondering, I WAS considering using `Text` type
-in lieu of `String`, but I ended up preferring the `String` type. The reason
-is that MiniFrame package is not designed for general _text processing_ tasks.
-It is a package for manipulating datasets in a tabular format. Besides, it is
-suitable only for the small to medium sized datasets and `String` does not have
-too much of an overhead for this task. Furthermore, using `Text` type would
-make one unable to use all the built-in `String` functions that come with
-Haskell `Prelude` as well as would add an extra dependency to the package.**
-
-**P.S. I am aware of the `pack/unpack` solution, but I find it too repetitive
-and in this case, unnecessary.**
-
 Note that the user does not need to be familiar with these types other
 than knowing the fact that types `Header`, `Row`, and `Column` are just
 the lists of the type `[String]`. These facts make it super simple
@@ -91,36 +79,34 @@ all these functions have a prefix `from`.**
 Example usage:
 
 ```haskell
-import MiniFrame
+import MiniFrame.Frames
 
 main :: IO ()
 main = do
     -- A sample miniframe
-    printMF fromSample
+    let smf = fromSample
 
     -- A null miniframe
-    printMF fromNull
+    let nmf = fromNull
 
     -- Constructing a miniframe from rows
-    let rows = [ ["Bianca" , "21", "Apple" ]
-               , ["Brian"  , "20", "Orange"]
-               , ["Bethany", "19", "Banana"]
-               ]
+    let rs = [ ["Bianca" , "21", "Apple" ]
+             , ["Brian"  , "20", "Orange"]
+             , ["Bethany", "19", "Banana"]
+             ]
 
-    printMF $ fromRows "Favorite fruits" ["Name", "Age", "Favorite Fruit"] rows
+    let frmf = fromRows "Favorite fruits" ["Name", "Age", "Favorite Fruit"] rs
 
     -- Constructing a miniframe from columns
-    let columns = [ ["Walter", "John", "Eric"]
-                  , ["500"   , "700" , "600" ]
-                  , ["18"    , "20"  , "19"  ]
-                  ]
+    let cs = [ ["Walter", "John", "Eric"]
+             , ["500"   , "700" , "600" ]
+             , ["18"    , "20"  , "19"  ]
+             ]
 
-    printMF $ fromColumns "Game scores" ["Player", "Score", "Age"] columns
+    let fcmf = fromColumns "Game scores" ["Player", "Score", "Age"] cs
 
     -- Constructing a miniframe from CSV file
-    miniframe <- fromCSV "schools.csv"
-
-    printMF miniframe
+    mf <- fromCSV "schools.csv"
 ```
 
 ### Accessing the data
@@ -137,16 +123,16 @@ main = do
 Example usage:
 
 ```haskell
-import MiniFrame
+import MiniFrame.Frames
 
 main :: IO ()
 main = do
-    putStrLn $ nameOf    fromSample  -- Get the name
-    print    $ headerOf  fromSample  -- Get the header
-    print    $ rowsOf    fromSample  -- Get the rows
-    print    $ columnsOf fromSample  -- Get the columns
-    print    $ headOf    fromSample  -- Get the head
-    print    $ tailOf    fromSample  -- Get the tail
+    let n  = nameOf    fromSample  -- Get the name
+    let h  = headerOf  fromSample  -- Get the header
+    let rs = rowsOf    fromSample  -- Get the rows
+    let cs = columnsOf fromSample  -- Get the columns
+    let ho = headOf    fromSample  -- Get the head
+    let to = tailOf    fromSample  -- Get the tail
 ```
 
 ### Counting the dimensions
@@ -160,13 +146,13 @@ main = do
 Example usage:
 
 ```haskell
-import MiniFrame
+import MiniFrame.Frames
 
 main :: IO ()
 main = do
-    print $ rowsNum    fromSample  -- Get the number of rows
-    print $ columnsNum fromSample  -- Get the number of columns
-    print $ entriesNum fromSample  -- Get the number of cells
+    let rsn = rowsNum    fromSample  -- Number of rows
+    let csn = columnsNum fromSample  -- Number of columns
+    let esn = entriesNum fromSample  -- Number of cells
 ```
 
 ### Modifications
@@ -184,23 +170,23 @@ main = do
 Example usage:
 
 ```haskell
-import MiniFrame
+import MiniFrame.Frames
 
 main :: IO ()
 main = do
     let newRow    = map show [1..4]  -- New row
     let newColumn = map show [1..8]  -- New column
 
-    printMF $ prependRow           newRow    fromSample  -- Prepending a row
-    printMF $ prependColumn "Nums" newColumn fromSample  -- Prepending a column
+    let prs = prependRow           newRow    fromSample  -- Prepend a row
+    let ars = prependColumn "Nums" newColumn fromSample  -- Prepend a column
 
-    printMF $ appendRow           newRow    fromSample  -- Appending a row
-    printMF $ appendColumn "Nums" newColumn fromSample  -- Appending a column
+    let ars = appendRow           newRow    fromSample  -- Appending a row
+    let acs = appendColumn "Nums" newColumn fromSample  -- Appending a column
 
-    printMF $ insertRow    1        newRow    fromSample  -- Inserting a row
-    printMF $ insertColumn 3 "Nums" newColumn fromSample  -- Inserting a column
+    let irs = insertRow    1        newRow    fromSample  -- Inserting a row
+    let ics = insertColumn 3 "Nums" newColumn fromSample  -- Inserting a column
 
-    printMF $ renameMf    "New Name"          fromSample  -- Renaming the miniframe
+    let rmf = renameMf "New Name" fromSample  -- Rename miniframe
 ```
 
 ### Removal
@@ -213,12 +199,12 @@ main = do
 Example usage:
 
 ```haskell
-import MiniFrame
+import MiniFrame.Frames
 
 main :: IO ()
 main = do
-    printMF $ removeRowByIndex   2    fromSample  -- Removing a row by index
-    printMF $ removeColumnByName "C4" fromSample  -- Removing a column by name
+    let rrs = removeRowByIndex   2    fromSample  -- Remove a row by index
+    let rcs = removeColumnByName "C4" fromSample  -- Remove a column by name
 ```
 
 ### Pretty-printing
@@ -236,17 +222,17 @@ main = do
 Example usage:
 
 ```haskell
-import MiniFrame
+import MiniFrame.Frames
 
 main :: IO
 main = do
-    printName        fromSample  -- Pretty-printing the name
-    printHeader      fromSample  -- Pretty-printing the header
-    printRow 1       fromSample  -- Pretty-printing the row by index
-    printRows        fromSample  -- Pretty-printing all the rows
-    printColumn "C4" fromSample  -- Pretty-printing the column C4
-    printColumns     fromSample  -- Pretty-printing all the columns
-    printMF          fromSample  -- Pretty-printing the miniframe
+    printName        fromSample  -- Pretty-print the name
+    printHeader      fromSample  -- Pretty-print the header
+    printRow    1    fromSample  -- Pretty-print the row by index
+    printRows        fromSample  -- Pretty-print all rows
+    printColumn "C4" fromSample  -- Pretty-print the column C4
+    printColumns     fromSample  -- Pretty-print all columns
+    printMF          fromSample  -- Pretty-print the miniframe
 ```
 
 ### Additional operations
@@ -260,13 +246,13 @@ main = do
 Example usage:
 
 ```haskell
-import MiniFrame
+import MiniFrame.Frames
 
 main :: IO ()
 main = do
-    print $ rowByIndex    5          fromSample  -- Get the row by index
-    print $ columnByname  "C3"       fromSample  -- Get the column by name
-    print $ columnByIndex 1          fromSample  -- Get the column by index
+    let rbi = rowByIndex    5    fromSample  -- Row by index
+    let cbn = columnByname  "C3" fromSample  -- Column by name
+    let cbi = columnByIndex 1    fromSample  -- Column by index
 ```
 
 ### Type conversion and numeric computation
@@ -283,7 +269,7 @@ main = do
 Example usage:
 
 ```haskell
-import MiniFrame
+import MiniFrame.Frames
 
 main :: IO ()
 main = do
@@ -302,16 +288,17 @@ main = do
              ]
 
     -- Calculating the total quantity
-    print $ sum $ toInt "Quantity" miniframe
+    let tq = sum $ toInt "Quantity" miniframe
 
     -- Calculating the average number of dollars spent per person
-    print $ sum (toDecimal "Total Spending" miniframe) / 3
+    let ad = sum (toDecimal "Total Spending" miniframe) / 3
 
     -- Calculating the total quantity using arbitrary precision integers
-    print $ sum $ toBigInt "Quantity" miniframe
+    let tqa = sum $ toBigInt "Quantity" miniframe
 
-    -- Calculating the average number of dollars spent per person using arbitrary precision decimals
-    print $ sum (toBigDecimal "Total Spending" miniframe) / 3
+    -- Calculating the average number of dollars spent per person
+    -- using arbitrary precision decimals
+    let ada = sum (toBigDecimal "Total Spending" miniframe) / 3
 ```
 
 ### Relational algebra
@@ -327,8 +314,8 @@ main = do
 Example usage:
 
 ```haskell
-import MiniFrame
-import Relational
+import MiniFrame.Frames
+import MiniFrame.Relational
 
 main :: IO ()
 main = do
@@ -348,28 +335,32 @@ This means that we can use the built-in list manipulation functions
 directly.
 
 ```haskell
-import MiniFrame
+import MiniFrame.Frames
 
 main :: IO ()
 main = do
-    let miniframe = fromRows
+    let mf = fromRows
 
-                   -- Name
-                   "MiniFrame with numeric data"
+             -- Name
+             "MiniFrame with numeric data"
 
-                   -- Header
-                   ["Product","Company","Value"]
+             -- Header
+             ["Product","Company","Value"]
 
-                   -- Rows
-                   [ ["FP toolkit" , "Haskell Enterprises", "1000000000000000000000.00"]
-                   , ["OOP toolkit", "C++ Enterprises"    , "100000000000000000000.00" ]
-                   , ["PP toolkit" , "C Enterprises"      , "10000000000000000000.00"  ]
-                   , ["LP toolkit" , "Prolog Enterprises" , "1000000000000000000.00"   ]
-                   ]
+             -- Rows
+             [ ["FP toolkit" , "Haskell Enterprises", "1000000000000000000000.00"]
+             , ["OOP toolkit", "C++ Enterprises"    , "100000000000000000000.00" ]
+             , ["PP toolkit" , "C Enterprises"      , "10000000000000000000.00"  ]
+             , ["LP toolkit" , "Prolog Enterprises" , "1000000000000000000.00"   ]
+             ]
 
     -- Print out the average of all prices (notice the built-in sum function)
-    print $ sum $ toBigDecimal $ columnByName "Value" miniframe
+    print $ sum $ toBigDecimal columnByName "Value" miniframe
 ```
+
+Using the built-in operations, however, does have its drawbacks such as
+no error messages if one messes up the structure of a miniframe. In other
+words, one is on its own once the borders of MiniFrame are crossed.
 
 ## License
 

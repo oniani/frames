@@ -118,11 +118,11 @@ fromNull = MiniFrame "" [] []
 
 -- | Build from rows
 fromRows :: Name -> Header -> [Row] -> MiniFrame
-fromRows n h rs = constraintsRow n h rs (MiniFrame n h rs)
+fromRows n h rs = constraintsRow n h rs $ MiniFrame n h rs
 
 -- | Build from columns
 fromColumns :: Name -> Header -> [Column] -> MiniFrame
-fromColumns n h cs = constraintsColumn n h cs (MiniFrame n h (List.transpose cs))
+fromColumns n h cs = constraintsColumn n h cs $ MiniFrame n h $ List.transpose cs
 
 -- | Build from the CSV file
 fromCSV :: String -> IO MiniFrame
@@ -130,7 +130,7 @@ fromCSV fn = do
     csv <- readCSV fn
     let h  = head csv
     let rs = tail csv
-    return (constraintsRow "MiniFrame" h rs (MiniFrame "MiniFrame" h rs))
+    return $ constraintsRow "MiniFrame" h rs $ MiniFrame "MiniFrame" h rs
 
 -------------------------------------------------------------------------------
 -- Retrieval
@@ -208,7 +208,7 @@ appendColumn cn c (MiniFrame n h rs)
     | otherwise             = MiniFrame n nh nrs
       where
         nh  = h ++ [cn]
-        nrs = List.transpose (List.transpose rs ++ [c])
+        nrs = List.transpose $ List.transpose rs ++ [c]
 
 -- | Insert a row at the given index
 insertRow :: Index -> Row -> MiniFrame -> MiniFrame
@@ -244,7 +244,7 @@ renameMf n (MiniFrame _ h rs) = MiniFrame n h rs
 removeRowByIndex :: Index -> MiniFrame -> MiniFrame
 removeRowByIndex i (MiniFrame n h rs)
     | i < 0 || i > length rs = error "Index out of bounds"
-    | otherwise              = MiniFrame n h (take i rs ++ drop (i + 1) rs)
+    | otherwise              = MiniFrame n h $ take i rs ++ drop (i + 1) rs
 
 -- | Remove a column by name
 removeColumnByName :: Name -> MiniFrame -> MiniFrame
