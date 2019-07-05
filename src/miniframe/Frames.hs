@@ -1,5 +1,5 @@
 {- |
-Module      :  MiniFrame.hs
+Module      :  Frames.hs
 Description :  Minimal data frames
 Copyright   :  (c) David Oniani
 License     :  GNU General Public License v3.0
@@ -11,23 +11,21 @@ Portability :  portable
 An implementation of a data frame which comes with various handy operations.
 -}
 
-module MiniFrame
-    (
-    -- Data types
-      MiniFrame (..)
+module Frames
+    ( MiniFrame (..)
     , Name
     , Header
     , Row
     , Column
 
-    -- Construction
+    -- * Construction
     , fromSample          -- MiniFrame
     , fromNull            -- MiniFrame
     , fromRows            -- Name -> Header -> [Row] -> MiniFrame
     , fromColumns         -- Name -> Header -> [Column] -> MiniFrame
     , fromCSV             -- String -> IO MiniFrame
 
-    -- Retrieval
+    -- * Retrieval
     , nameOf              -- MiniFrame -> Name
     , headerOf            -- MiniFrame -> Header
     , rowsOf              -- MiniFrame -> [Row]
@@ -35,24 +33,25 @@ module MiniFrame
     , headOf              -- MiniFrame -> Row
     , tailOf              -- MiniFrame -> [Row]
 
-    -- Dimensions
+    -- * Dimensions
     , rowsNum             -- MiniFrame -> Int
     , columnsNum          -- MiniFrame -> Int
     , entriesNum          -- MiniFrame -> Int
 
-    -- Modification
+    -- * Modification
     , prependRow          -- Row -> MiniFrame -> MiniFrame
     , prependColumn       -- Name -> Column -> MiniFrame -> MiniFrame
     , appendRow           -- Row -> MiniFrame -> MiniFrame
     , appendColumn        -- Name -> Column -> MiniFrame -> MiniFrame
     , insertRow           -- Index -> Row -> MiniFrame -> MiniFrame
     , insertColumn        -- Name -> Name -> Column -> MiniFrame -> MiniFrame
+    , renameMf            -- Name -> MiniFrame -> MiniFrame
 
-    -- Removal
+    -- * Removal
     , removeRowByIndex    -- Index -> MiniFrame -> MiniFrame
     , removeColumnByName  -- Name -> MiniFrame -> MiniFrame
 
-    -- Pretty-printing
+    -- * Pretty-printing
     , printName           -- MiniFrame -> IO ()
     , printHeader         -- MiniFrame -> IO ()
     , printRow            -- Index -> MiniFrame -> IO ()
@@ -61,18 +60,16 @@ module MiniFrame
     , printColumns        -- MiniFrame -> IO ()
     , printMF             -- MiniFrame -> IO ()
 
-    -- Additional operations
+    -- * Additional operations
     , rowByIndex          -- Index -> MiniFrame -> Row
     , columnByName        -- Name -> MiniFrame -> Column
     , columnByIndex       -- Index -> MiniFrame -> Column
-    , renameMf            -- Name -> MiniFrame -> MiniFrame
 
-    -- Conversion
+    -- * Conversion
     , toInt               -- Column -> MiniFrame -> [Int]
     , toDecimal           -- Column -> MiniFrame -> [Float]
     , toBigInt            -- Column -> MiniFrame -> [Integer]
     , toBigDecimal        -- Column -> MiniFrame -> [Double]
-
     ) where
 
 import Data.Char (isDigit)
@@ -90,9 +87,9 @@ type Row    = [String]
 type Column = [String]
 
 data MiniFrame = MiniFrame
-    { name   :: !Name     -- Name of the MiniFrame
-    , header :: !Header   -- Header columns of the MiniFrame
-    , rows   :: ![Row]    -- Rows of the MiniFrame
+    { name   :: {-# UNPACK #-} !Name
+    , header :: {-# UNPACK #-} !Header
+    , rows   :: {-# UNPACK #-} ![Row]
     } deriving (Eq, Show)
 
 -------------------------------------------------------------------------------
@@ -235,6 +232,10 @@ insertColumn i cn c (MiniFrame n h rs)
         sh  = splitAt i h
         nh  = fst sh ++ [cn] ++ snd sh
 
+-- | Rename the miniframe
+renameMf :: Name -> MiniFrame -> MiniFrame
+renameMf n (MiniFrame _ h rs) = MiniFrame n h rs
+
 -------------------------------------------------------------------------------
 -- Removal
 -------------------------------------------------------------------------------
@@ -315,10 +316,6 @@ columnByIndex :: Index -> MiniFrame -> Column
 columnByIndex i (MiniFrame _ _ rs)
     | i < 0 || i >= length (List.transpose rs) = error "Index out of bounds"
     | otherwise                                = List.transpose rs !! i
-
--- | Rename the miniframe
-renameMf :: Name -> MiniFrame -> MiniFrame
-renameMf n (MiniFrame _ h rs) = MiniFrame n h rs
 
 -------------------------------------------------------------------------------
 -- Conversion

@@ -25,9 +25,9 @@ be manipulated directly using built-in list functions such as `map`,
 - [Counting the dimensions](#counting-the-dimensions)
 - [Modifications](#modifications)
 - [Removal](#removal)
-- [Type conversion and numeric computation](#type-conversion-and-numeric-computation)
 - [Pretty-printing](#pretty-printing)
 - [Additional operations](#additional-operations)
+- [Type conversion and numeric computation](#type-conversion-and-numeric-computation)
 - [Relational Algebra](#relational-algebra)
 - [Leveraging Haskell's built-in goodness](#leveraging-haskells-built-in-goodness)
 
@@ -38,10 +38,10 @@ Its definition is shown below.
 
 ```haskell
 data MiniFrame = MiniFrame
-    { name   :: !Name     -- Name
-    , header :: !Header   -- Header
-    , rows   :: ![Row] }  -- Rows
-    deriving (Eq, Show)
+    { name   :: {-# UNPACK #-} !Name
+    , header :: {-# UNPACK #-} !Header
+    , rows   :: {-# UNPACK #-} ![Row]
+    } deriving (Eq, Show)
 ```
 
 Most of the functions operate on this data type. As it can be seen above,
@@ -179,6 +179,7 @@ main = do
 | `appendColumn`  | add a column to the end       | `Name -> Column -> MiniFrame -> MiniFrame`          |
 | `insertRow`     | add a row by given index      | `Index -> Row -> MiniFrame -> MiniFrame`            |
 | `insertColumn`  | add a column by given index   | `Index -> Name -> Column -> MiniFrame -> MiniFrame` |
+| `renameMf`      | rename a miniframe            | `Name -> MiniFrame -> MiniFrame`                    |
 
 Example usage:
 
@@ -199,6 +200,7 @@ main = do
     printMF $ insertRow    1        newRow    fromSample  -- Inserting a row
     printMF $ insertColumn 3 "Nums" newColumn fromSample  -- Inserting a column
 
+    printMF $ renameMf    "New Name"          fromSample  -- Renaming the miniframe
 ```
 
 ### Removal
@@ -217,51 +219,6 @@ main :: IO ()
 main = do
     printMF $ removeRowByIndex   2    fromSample  -- Removing a row by index
     printMF $ removeColumnByName "C4" fromSample  -- Removing a column by name
-```
-
-### Type conversion and numeric computation
-
-| Function       | Description                                                            | Signature             |
-| -------------- | ---------------------------------------------------------------------- | --------------------- |
-| `toInt`        | Convert a column of string to a column of fixed-precision integers     | `Column -> [Int]`     |
-| `toDecimal`    | Convert a column of stings to a column of fixed-precision decimals     | `Column -> [Float]`   |
-| `toBigInt`     | Convert a column of string to a column of arbitrary precision integers | `Column -> [Integer]` |
-| `toBigDecimal` | Convert a column of stings to a column of arbitrary decimals           | `Column -> [Double]`  |
-
-**NOTE: Word "arbitrary" here refers to a size that can be handled by the machine.**
-
-Example usage:
-
-```haskell
-import MiniFrame
-
-main :: IO ()
-main = do
-    let miniframe = fromColumns
-
-                    -- Name
-                    "MiniFrame"
-
-                    -- Header
-                    ["Name","Quantity","Total Spending"]
-
-                    -- Columns
-                    [ ["Paul" , "Ryan", "Kim"  ]
-                    , ["10"   , "20"  , "30"   ]
-                    , ["100.0", "200" , "300.0"]
-                    ]
-
-    -- Calculating the total quantity
-    print $ sum $ toInt $ columnByName "Quantity" miniframe
-
-    -- Calculating the average number of dollars spent per person
-    print $ sum (toDecimal $ columnByName "Total Spending" miniframe) / 3
-
-    -- Calculating the total quantity using arbitrary precision integers
-    print $ sum $ toBigInt $ columnByName "Quantity" miniframe
-
-    -- Calculating the average number of dollars spent per person using arbitrary precision decimals
-    print $ sum (toBigDecimal $ columnByName "Total Spending" miniframe) / 3
 ```
 
 ### Pretty-printing
@@ -294,12 +251,11 @@ main = do
 
 ### Additional operations
 
-| Function        | Description             | Signature                        |
-| --------------- | ----------------------- | -------------------------------- |
-| `rowByIndex`    | get the row by index    | `Index -> MiniFrame -> Row`      |
-| `columnByName`  | get the column by name  | `Name -> MiniFrame -> Column`    |
-| `columnByIndex` | get the column by index | `Index -> MiniFrame -> Column`   |
-| `renameMf`      | rename a miniframe      | `Name -> MiniFrame -> MiniFrame` |
+| Function        | Description             | Signature                      |
+| --------------- | ----------------------- | ------------------------------ |
+| `rowByIndex`    | get the row by index    | `Index -> MiniFrame -> Row`    |
+| `columnByName`  | get the column by name  | `Name -> MiniFrame -> Column`  |
+| `columnByIndex` | get the column by index | `Index -> MiniFrame -> Column` |
 
 Example usage:
 
@@ -311,7 +267,51 @@ main = do
     print $ rowByIndex    5          fromSample  -- Get the row by index
     print $ columnByname  "C3"       fromSample  -- Get the column by name
     print $ columnByIndex 1          fromSample  -- Get the column by index
-    print $ renameMf      "New Name" fromSample  -- Rename the miniframe
+```
+
+### Type conversion and numeric computation
+
+| Function       | Description                                                            | Signature                        |
+| -------------- | ---------------------------------------------------------------------- | -------------------------------- |
+| `toInt`        | Convert a column of string to a column of fixed-precision integers     | `Name -> MiniFrame -> [Int]`     |
+| `toDecimal`    | Convert a column of stings to a column of fixed-precision decimals     | `Name -> MiniFrame -> [Float]`   |
+| `toBigInt`     | Convert a column of string to a column of arbitrary precision integers | `Name -> MiniFrame -> [Integer]` |
+| `toBigDecimal` | Convert a column of stings to a column of arbitrary decimals           | `Name -> MiniFrame -> [Double]`  |
+
+**NOTE: Word "arbitrary" here refers to a size that can be handled by the machine.**
+
+Example usage:
+
+```haskell
+import MiniFrame
+
+main :: IO ()
+main = do
+    let mf = fromColumns
+
+           -- Name
+             "MiniFrame"
+
+             -- Header
+             ["Name","Quantity","Total Spending"]
+
+             -- Columns
+             [ ["Paul" , "Ryan", "Kim"  ]
+             , ["10"   , "20"  , "30"   ]
+             , ["100.0", "200" , "300.0"]
+             ]
+
+    -- Calculating the total quantity
+    print $ sum $ toInt "Quantity" miniframe
+
+    -- Calculating the average number of dollars spent per person
+    print $ sum (toDecimal "Total Spending" miniframe) / 3
+
+    -- Calculating the total quantity using arbitrary precision integers
+    print $ sum $ toBigInt "Quantity" miniframe
+
+    -- Calculating the average number of dollars spent per person using arbitrary precision decimals
+    print $ sum (toBigDecimal "Total Spending" miniframe) / 3
 ```
 
 ### Relational algebra

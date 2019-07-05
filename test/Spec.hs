@@ -133,10 +133,17 @@ prop_removeColumnByName cn mf@(MiniFrame n h rs)
       i   = Maybe.fromJust $ List.elemIndex cn h
       nrs = List.transpose $ take i (List.transpose rs) ++ drop (i + 1) (List.transpose rs)
 
+prop_rowByIndex :: Int -> MiniFrame -> Bool
+prop_rowByIndex i mf@(MiniFrame _ _ rs)
+    | null rs                 = True
+    | i < 0 || i >= length rs = True
+    | otherwise               = rs !! i == rowByIndex i mf
+
 -- | Property is that we can use the sum and foldr with numeric parameters
 prop_toInt :: String -> MiniFrame -> Bool
 prop_toInt cn mf
     | cn `notElem` headerOf mf = True
+    | null (rowsOf mf)         = True
     | all (all isDigit) c      = sum il + 1 == foldr (+) 1 il
     | otherwise                = True
       where
@@ -147,6 +154,7 @@ prop_toInt cn mf
 prop_toDecimal :: String -> MiniFrame -> Bool
 prop_toDecimal cn mf
     | cn `notElem` headerOf mf                   = True
+    | null (rowsOf mf)                           = True
     | all (all isDigit) $ map (filter (/='.')) c = sum dl + 1 == foldr (+) 1 dl
     | otherwise                                  = True
       where
@@ -157,6 +165,7 @@ prop_toDecimal cn mf
 prop_toBigInt :: String -> MiniFrame -> Bool
 prop_toBigInt cn mf
     | cn `notElem` headerOf mf = True
+    | null (rowsOf mf)         = True
     | all (all isDigit) c      = sum bil + 1 == foldr (+) 1 bil
     | otherwise                = True
       where
@@ -166,9 +175,10 @@ prop_toBigInt cn mf
 -- | Property is that we can use the sum and foldr with numeric parameters
 prop_toBigDecimal :: String -> MiniFrame -> Bool
 prop_toBigDecimal cn mf
-    | cn `notElem` headerOf mf = True
+    | cn `notElem` headerOf mf                   = True
+    | null (rowsOf mf)                           = True
     | all (all isDigit) $ map (filter (/='.')) c = sum bdl + 1 == foldr (+) 1 bdl
-    | otherwise                = True
+    | otherwise                                  = True
       where
         bdl = toBigDecimal cn mf
         c   = columnByName cn mf
@@ -198,6 +208,7 @@ main = do
                 , quickCheckResult prop_removeRowByIndex
                 , quickCheckResult prop_removeColumnByName
                 --
+                , quickCheckResult prop_rowByIndex
                 , quickCheckResult prop_toInt
                 , quickCheckResult prop_toDecimal
                 , quickCheckResult prop_toBigInt
