@@ -16,11 +16,11 @@ module MiniFrame.Relational
     , diff       -- MiniFrame -> MiniFrame -> MiniFrame
     , intersect  -- MiniFrame -> MiniFrame -> MiniFrame
     , project    -- [Name] -> MiniFrame -> MiniFrame
-    , select     -- (Header -> Row -> Bool) -> MiniFrame -> MiniFrame
     , rename     -- Name -> Name -> MiniFrame -> MiniFrame
-    , njoin      -- MiniFrame -> MiniFrame -> MiniFrame
-    , thetaJoin  -- (Header -> Row -> Bool) -> MiniFrame -> MiniFrame -> MiniFrame
     , cartprod   -- MiniFrame -> MiniFrame -> MiniFrame
+    , njoin      -- MiniFrame -> MiniFrame -> MiniFrame
+    , select     -- (Header -> Row -> Bool) -> MiniFrame -> MiniFrame
+    , thetajoin  -- (Header -> Row -> Bool) -> MiniFrame -> MiniFrame -> MiniFrame
     ) where
 
 import MiniFrame.Frames
@@ -81,10 +81,6 @@ project cns mf@(MiniFrame n h rs)
         nh  = cns
         nrs = List.transpose $ map (`columnByName` mf) cns
 
--- | Select operation (it does the partial application and then filters the rows with the rest)
-select :: (Header -> Row -> Bool) -> MiniFrame -> MiniFrame
-select p (MiniFrame n h rs) = MiniFrame ("Selected: " ++ n) h (filter (p h) rs)
-
 -- | Rename operation
 rename :: Name -> Name -> MiniFrame -> MiniFrame
 rename ocn ncn mf@(MiniFrame n h rs)
@@ -96,7 +92,17 @@ rename ocn ncn mf@(MiniFrame n h rs)
         nh  = take i h ++ [ncn] ++ drop (i + 1) h
         nrs = rs
 
--- The following is a proto version that needs to be tested
+-- | Cartesian product operation
+cartprod :: MiniFrame -> MiniFrame -> MiniFrame
+cartprod (MiniFrame n h rs) (MiniFrame on oh ors)
+    | h `listDiff` oh /= h = error "Cannot perform cartesian product on duplicate column names"
+    | otherwise            = MiniFrame nn nh nrs
+    where
+        nn  = n ++ " cartprod " ++ on
+        nh  = h ++ oh
+        nrs = [x ++ y | x <- rs, y <- ors]
+
+-- The following operations are the proto versions that need to be tested
 
 -- | Natural join operation
 njoin :: MiniFrame -> MiniFrame -> MiniFrame
@@ -110,19 +116,13 @@ njoin mf@(MiniFrame n h rs) omf@(MiniFrame on oh ors)
         ocs  = map (`columnByName` omf) ccns
         ----
         nn  = n ++ " njoin " ++ on
-        nh  = List.nub (h ++ oh)
-        nrs = List.nub (rs ++ ors)
+        nh  = ordNub (h ++ oh)
+        nrs = ordNub (rs ++ ors)
+
+-- | Select operation (it does the partial application and then filters the rows with the rest)
+select :: (Header -> Row -> Bool) -> MiniFrame -> MiniFrame
+select p (MiniFrame n h rs) = MiniFrame ("Selected: " ++ n) h (filter (p h) rs)
 
 -- | Theta join operation
 thetaJoin :: (Header -> Row -> Bool) -> MiniFrame -> MiniFrame -> MiniFrame
 thetaJoin f mf omf = select f (njoin mf omf)
-
--- | Cartesian product operation
-cartprod :: MiniFrame -> MiniFrame -> MiniFrame
-cartprod (MiniFrame n h rs) (MiniFrame on oh ors)
-    | h `listDiff` oh /= h = error "Cannot perform cartesian product on duplicate column names"
-    | otherwise            = MiniFrame nn nh nrs
-    where
-        nn  = n ++ " cartprod " ++ on
-        nh  = h ++ oh
-        nrs = [x ++ y | x <- rs, y <- ors]

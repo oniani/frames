@@ -71,10 +71,16 @@ numeric computations.
 | `fromColumns` | construct out of columns  | `Name -> Header -> [Column] -> MiniFrame` |
 | `fromCSV`     | construct out of CSV file | `String -> IO MiniFrame`                  |
 
-**NOTE: Do not let names `fromSample` and `fromNull` deceive you. The only thing
-these two functions do is a construction of a miniframe from a sample name, header,
-and rows and from nothing (resulting in an empty miniframe). Just for consistency,
-all these functions have a prefix `from`.**
+**NOTE #1: Do not let names `fromSample` and `fromNull` deceive you.
+The only thing these two functions do is a construction of a miniframe
+from a sample name, header, and rows and from nothing (resulting in an
+empty miniframe). Just for consistency, all these functions have a prefix
+`from`.**
+
+**NOTE #2: These are recommended ways (A.K.A. _smart_ constructors) to
+build a MiniFrame. Though, one could also use the `MiniFrame` class
+to build it, but in this case, the error-handling will be left for the
+user (:.**
 
 Example usage:
 
