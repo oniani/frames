@@ -79,9 +79,9 @@ empty miniframe). Just for consistency, all these functions have a prefix
 `from`.**
 
 **NOTE #2: These are recommended ways (A.K.A. _smart_ constructors) to
-build a MiniFrame. Though, one could also use the `MiniFrame` class
-to build it, but in this case, the error-handling will be left for the
-user (:.**
+build a MiniFrame. Though, one could also use the `MiniFrame` data type
+constructor to build it, but in this case, the error-handling will be left
+for the user (:.**
 
 Example usage:
 
