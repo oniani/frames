@@ -30,6 +30,7 @@ be manipulated directly using built-in list functions such as `map`,
 - [Type conversion and numeric computation](#type-conversion-and-numeric-computation)
 - [Relational Algebra](#relational-algebra)
 - [Leveraging Haskell's built-in goodness](#leveraging-haskells-built-in-goodness)
+- [Installation](#installation)
 
 ### Data types
 
@@ -113,6 +114,8 @@ main = do
 
     -- Constructing a miniframe from CSV file
     mf <- fromCSV "schools.csv"
+
+    return ()
 ```
 
 ### Accessing the data
@@ -139,6 +142,8 @@ main = do
     let cs = columnsOf fromSample  -- Get the columns
     let ho = headOf    fromSample  -- Get the head
     let to = tailOf    fromSample  -- Get the tail
+
+    return ()
 ```
 
 ### Counting the dimensions
@@ -159,6 +164,8 @@ main = do
     let rsn = rowsNum    fromSample  -- Number of rows
     let csn = columnsNum fromSample  -- Number of columns
     let esn = entriesNum fromSample  -- Number of cells
+
+    return ()
 ```
 
 ### Modifications
@@ -193,6 +200,8 @@ main = do
     let ics = insertColumn 3 "Nums" newColumn fromSample  -- Inserting a column
 
     let rmf = renameMf "New Name" fromSample  -- Rename miniframe
+
+    return ()
 ```
 
 ### Removal
@@ -239,6 +248,8 @@ main = do
     printColumn "C4" fromSample  -- Pretty-print the column C4
     printColumns     fromSample  -- Pretty-print all columns
     printMF          fromSample  -- Pretty-print the miniframe
+
+    return ()
 ```
 
 ### Additional operations
@@ -259,6 +270,8 @@ main = do
     let rbi = rowByIndex    5    fromSample  -- Row by index
     let cbn = columnByname  "C3" fromSample  -- Column by name
     let cbi = columnByIndex 1    fromSample  -- Column by index
+
+    return ()
 ```
 
 ### Type conversion and numeric computation
@@ -305,6 +318,8 @@ main = do
     -- Calculating the average number of dollars spent per person
     -- using arbitrary precision decimals
     let ada = sum (toBigDecimal "Total Spending" miniframe) / 3
+
+    return ()
 ```
 
 ### Relational algebra
@@ -320,17 +335,22 @@ main = do
 Example usage:
 
 ```haskell
+
 import MiniFrame.Frames
 import MiniFrame.Relational
 
 main :: IO ()
 main = do
-    print $ fromSample `union`     fromSample  -- Union
-    print $ fromSample `diff`      fromSample  -- Difference
-    print $ fromSample `intersect` fromSample  -- Intersection
+    let umf = fromSample  `union`     fromSample  -- Union
+    let dmf = fromSample  `diff`      fromSample  -- Difference
+    let imf = fromSample  `intersect` fromSample  -- Intersection
+    let pmf = project     ["C2","C4"] fromSample  -- Projection
+    let cmf = fromColumns "R1" ["C1","C2"] [["A","B","C"],["1","2","3"]]
+              `cartprod`
+              fromColumns "R2" ["C3","C4"] [["4","5","6"],["D","E","F"]]
+    let rmf = rename      "C1" "FC"  fromSample   -- Rename
 
-    print $ project ["C2","C4"]         fromSample  -- Projection
-    print $ rename  "C1" "First Column" fromSample  -- Rename
+    return ()
 ```
 
 ### Leveraging Haskell's built-in goodness
@@ -361,12 +381,25 @@ main = do
              ]
 
     -- Print out the average of all prices (notice the built-in sum function)
-    print $ sum $ toBigDecimal columnByName "Value" miniframe
+    print $ sum $ toBigDecimal "Value" mf
+
+    -- Get the particular entry ("Haskell Enterprises" in this case)
+    -- notice Haskell's built-in head function
+    print $ head $ columnByName "Company" mf
 ```
 
 Using the built-in operations, however, does have its drawbacks such as
 no error messages if one messes up the structure of a miniframe. In other
 words, one is on its own once the borders of MiniFrame are crossed.
+
+### Installation
+
+The package can be installed via [Cabal](https://www.haskell.org/cabal/).
+Run the command shown below to install the package.
+
+```sh
+cabal install
+```
 
 ## License
 

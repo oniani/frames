@@ -8,10 +8,9 @@ module Main where
 import System.Exit               (exitFailure)
 import Control.Monad             (unless)
 import Control.Applicative       ((<$>), (<*>))
-import Data.Char                 (isDigit)
 import Test.QuickCheck.Test      (quickCheckResult, isSuccess)
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-import MiniFrame
+import MiniFrame.Frames
 
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
@@ -133,56 +132,6 @@ prop_removeColumnByName cn mf@(MiniFrame n h rs)
       i   = Maybe.fromJust $ List.elemIndex cn h
       nrs = List.transpose $ take i (List.transpose rs) ++ drop (i + 1) (List.transpose rs)
 
-prop_rowByIndex :: Int -> MiniFrame -> Bool
-prop_rowByIndex i mf@(MiniFrame _ _ rs)
-    | null rs                 = True
-    | i < 0 || i >= length rs = True
-    | otherwise               = rs !! i == rowByIndex i mf
-
--- | Property is that we can use the sum and foldr with numeric parameters
-prop_toInt :: String -> MiniFrame -> Bool
-prop_toInt cn mf
-    | cn `notElem` headerOf mf = True
-    | null (rowsOf mf)         = True
-    | all (all isDigit) c      = sum il + 1 == foldr (+) 1 il
-    | otherwise                = True
-      where
-        il = toInt cn mf
-        c  = columnByName cn mf
-
--- | Property is that we can use the sum and foldr with numeric parameters
-prop_toDecimal :: String -> MiniFrame -> Bool
-prop_toDecimal cn mf
-    | cn `notElem` headerOf mf                   = True
-    | null (rowsOf mf)                           = True
-    | all (all isDigit) $ map (filter (/='.')) c = sum dl + 1 == foldr (+) 1 dl
-    | otherwise                                  = True
-      where
-        dl = toDecimal cn mf
-        c  = columnByName cn mf
-
--- | Property is that we can use the sum and foldr with numeric parameters
-prop_toBigInt :: String -> MiniFrame -> Bool
-prop_toBigInt cn mf
-    | cn `notElem` headerOf mf = True
-    | null (rowsOf mf)         = True
-    | all (all isDigit) c      = sum bil + 1 == foldr (+) 1 bil
-    | otherwise                = True
-      where
-        bil = toBigInt cn mf
-        c   = columnByName cn mf
-
--- | Property is that we can use the sum and foldr with numeric parameters
-prop_toBigDecimal :: String -> MiniFrame -> Bool
-prop_toBigDecimal cn mf
-    | cn `notElem` headerOf mf                   = True
-    | null (rowsOf mf)                           = True
-    | all (all isDigit) $ map (filter (/='.')) c = sum bdl + 1 == foldr (+) 1 bdl
-    | otherwise                                  = True
-      where
-        bdl = toBigDecimal cn mf
-        c   = columnByName cn mf
-
 -------------------------------------------------------------------------------
 
 main :: IO ()
@@ -191,28 +140,18 @@ main = do
                 , quickCheckResult prop_fromNull
                 , quickCheckResult prop_fromRows
                 , quickCheckResult prop_fromColumns
-                --
                 , quickCheckResult prop_nameOf
                 , quickCheckResult prop_headerOf
                 , quickCheckResult prop_rowsOf
-                --
                 , quickCheckResult prop_rowsNum
                 , quickCheckResult prop_columnsNum
                 , quickCheckResult prop_entriesNum
-                --
                 , quickCheckResult prop_prependRow
                 , quickCheckResult prop_prependColumn
                 , quickCheckResult prop_appendRow
                 , quickCheckResult prop_appendColumn
-                --
                 , quickCheckResult prop_removeRowByIndex
                 , quickCheckResult prop_removeColumnByName
-                --
-                , quickCheckResult prop_rowByIndex
-                , quickCheckResult prop_toInt
-                , quickCheckResult prop_toDecimal
-                , quickCheckResult prop_toBigInt
-                , quickCheckResult prop_toBigDecimal
                 ]
 
     success <- all isSuccess <$> sequence tests

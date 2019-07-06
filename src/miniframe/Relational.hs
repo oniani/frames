@@ -15,12 +15,9 @@ module MiniFrame.Relational
     ( union      -- MiniFrame -> MiniFrame -> MiniFrame
     , diff       -- MiniFrame -> MiniFrame -> MiniFrame
     , intersect  -- MiniFrame -> MiniFrame -> MiniFrame
+    , cartprod   -- MiniFrame -> MiniFrame -> MiniFrame
     , project    -- [Name] -> MiniFrame -> MiniFrame
     , rename     -- Name -> Name -> MiniFrame -> MiniFrame
-    , cartprod   -- MiniFrame -> MiniFrame -> MiniFrame
-    , njoin      -- MiniFrame -> MiniFrame -> MiniFrame
-    , select     -- (Header -> Row -> Bool) -> MiniFrame -> MiniFrame
-    , thetajoin  -- (Header -> Row -> Bool) -> MiniFrame -> MiniFrame -> MiniFrame
     ) where
 
 import MiniFrame.Frames
@@ -28,18 +25,6 @@ import Optimize
 
 import qualified Data.List  as List
 import qualified Data.Maybe as Maybe
-
--------------------------------------------------------------------------------
---                         Relational algebra
---
--- The operators include union, difference, intersect, project, select,
--- rename,and join. These implementations could be improved in various
--- ways (more efficient, flexible etc). Operations like natural join,
--- theta join, equijoin, semijoin, antijoin, division, and cartesian
--- product will be implemented in the next few updates. Some of the
--- operations such as left and right outer joins, left and right inner
--- joins, full outer and full inner joins are yet to be implemented.
--------------------------------------------------------------------------------
 
 -- | Union operation
 union :: MiniFrame -> MiniFrame -> MiniFrame
@@ -71,13 +56,23 @@ intersect (MiniFrame n h rs) (MiniFrame on oh ors)
         nh  = h
         nrs = rs `listIntersect` ors
 
+-- | Cartesian product operation
+cartprod :: MiniFrame -> MiniFrame -> MiniFrame
+cartprod (MiniFrame n h rs) (MiniFrame on oh ors)
+    | h `listDiff` oh /= h = error "Cannot perform cartesian product on duplicate column names"
+    | otherwise            = MiniFrame nn nh nrs
+    where
+        nn  = n ++ "Cartesian product: " ++ on
+        nh  = h ++ oh
+        nrs = [x ++ y | x <- rs, y <- ors]
+
 -- | Project operation
 project :: [Name] -> MiniFrame -> MiniFrame
 project cns mf@(MiniFrame n h rs)
     | not $ all (`elem` h) cns = error "Column name does not exist"
     | otherwise                = MiniFrame nn nh nrs
     where
-        nn  = "Projected " ++ n
+        nn  = "Projected: " ++ n
         nh  = cns
         nrs = List.transpose $ map (`columnByName` mf) cns
 
@@ -91,38 +86,3 @@ rename ocn ncn mf@(MiniFrame n h rs)
         nn  = n
         nh  = take i h ++ [ncn] ++ drop (i + 1) h
         nrs = rs
-
--- | Cartesian product operation
-cartprod :: MiniFrame -> MiniFrame -> MiniFrame
-cartprod (MiniFrame n h rs) (MiniFrame on oh ors)
-    | h `listDiff` oh /= h = error "Cannot perform cartesian product on duplicate column names"
-    | otherwise            = MiniFrame nn nh nrs
-    where
-        nn  = n ++ " cartprod " ++ on
-        nh  = h ++ oh
-        nrs = [x ++ y | x <- rs, y <- ors]
-
--- The following operations are the proto versions that need to be tested
-
--- | Natural join operation
-njoin :: MiniFrame -> MiniFrame -> MiniFrame
-njoin mf@(MiniFrame n h rs) omf@(MiniFrame on oh ors)
-    | null ccns  = error "No common column names"
-    | cs /= ocs  = error "No common columns"
-    | otherwise  = MiniFrame nn nh nrs
-    where
-        ccns = h `listIntersect` oh
-        cs   = map (`columnByName` mf) ccns
-        ocs  = map (`columnByName` omf) ccns
-        ----
-        nn  = n ++ " njoin " ++ on
-        nh  = ordNub (h ++ oh)
-        nrs = ordNub (rs ++ ors)
-
--- | Select operation (it does the partial application and then filters the rows with the rest)
-select :: (Header -> Row -> Bool) -> MiniFrame -> MiniFrame
-select p (MiniFrame n h rs) = MiniFrame ("Selected: " ++ n) h (filter (p h) rs)
-
--- | Theta join operation
-thetaJoin :: (Header -> Row -> Bool) -> MiniFrame -> MiniFrame -> MiniFrame
-thetaJoin f mf omf = select f (njoin mf omf)
