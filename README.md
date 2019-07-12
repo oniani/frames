@@ -32,9 +32,9 @@ be manipulated directly using built-in list functions such as `map`,
 - [Leveraging Haskell's built-in goodness](#leveraging-haskells-built-in-goodness)
 - [Installation](#installation)
 
-For those who want to take a look at Haddock-generated documentation,
-jump to this [link](https://davidoniani.com/miniframe/). Note that the
-library is not well-documented on Haddock.
+Those who want to take a look at Haddock-generated documentation,
+jump to this [link](https://www.davidoniani.com//miniframe/).  
+Note that the library is not well-documented on Haddock.
 
 ### Data types
 
