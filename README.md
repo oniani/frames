@@ -402,6 +402,7 @@ The package can be installed via [Cabal](https://www.haskell.org/cabal/).
 Run the command shown below to install the package.
 
 ```sh
+git clone https://github.com/oniani/miniframe.git
 cabal install
 ```
 
