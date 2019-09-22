@@ -17,6 +17,8 @@ everything within miniframes including the fundamental data types can
 be manipulated directly using built-in list functions such as `map`,
 `concatMap`, `foldl`, `foldr`, `scanl`, `scanr`, and so forth.
 
+> NOTE: The PDF version of this documentation is available [here](./README.pdf).
+
 ## Documentation
 
 - [Data types](#data-types)
@@ -33,7 +35,7 @@ be manipulated directly using built-in list functions such as `map`,
 - [Installation](#installation)
 
 Those who want to take a look at Haddock-generated documentation,
-jump to this [link](https://www.davidoniani.com//miniframe/).  
+jump to this [link](https://www.davidoniani.com//miniframe/).
 Note that the library is not well-documented on Haddock.
 
 ### Data types
