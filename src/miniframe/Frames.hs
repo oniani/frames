@@ -2,7 +2,7 @@
 Module      :  Frames.hs
 Description :  Minimal data frames
 Copyright   :  (c) David Oniani
-License     :  GNU General Public License v3.0
+License     :  MIT License
 
 Maintainer  :  onianidavid@gmail.com
 Stability   :  experimental
@@ -112,7 +112,7 @@ fromSample = MiniFrame n h rs
          , ["R8-C1","R8-C2","R8-C3","R8-C4"]
          ]
 
--- | Built an empty miniframe
+-- | Build an empty miniframe
 fromNull :: MiniFrame
 fromNull = MiniFrame "" [] []
 
